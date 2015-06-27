@@ -314,8 +314,6 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
         int page(offset >> BLOCK_MANAGER_BUFFER_BITS);
         int sz(std::min(bufsize, BLOCK_MANAGER_BUFFER_SIZE - pos));
         {
-            //const auto bufpos = f_buffers[page].begin() + pos;
-            //std::copy( bufpos , bufpos + sz , buffer );
             f_buffers[page].copy_to( buffer, pos, sz );
         }
         buffer += sz;
@@ -324,8 +322,6 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
         while(size_left >= BLOCK_MANAGER_BUFFER_SIZE)
         {
             ++page;
-            //const auto bufpos = f_buffers[page].begin();
-            //std::copy( bufpos, bufpos + BLOCK_MANAGER_BUFFER_SIZE, buffer );
             f_buffers[page].copy_to( buffer, 0, BLOCK_MANAGER_BUFFER_SIZE );
             buffer += BLOCK_MANAGER_BUFFER_SIZE;
             size_left -= BLOCK_MANAGER_BUFFER_SIZE;
@@ -334,8 +330,6 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
         if(size_left > 0)
         {
             // page is not incremented yet
-            //const auto bufpos = f_buffers[page + 1].begin();
-            //std::copy( bufpos, bufpos + size_left, buffer );
             f_buffers[page+1].copy_to( buffer, 0, size_left );
         }
     }
@@ -374,16 +368,12 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         int pos(f_size & (BLOCK_MANAGER_BUFFER_SIZE - 1));
         int page(f_size >> BLOCK_MANAGER_BUFFER_BITS);
         int sz(std::min(offset - f_size, BLOCK_MANAGER_BUFFER_SIZE - pos));
-        //const auto& buff_pos( f_buffers[page].begin() + pos );
-        //std::fill( buff_pos, buff_pos + sz, 0 );
         f_buffers[page].fill( pos, sz, 0 );
         f_size += sz;
         while(offset > f_size)
         {
             ++page;
             sz = std::min(offset - f_size, BLOCK_MANAGER_BUFFER_SIZE);
-            //const auto& page_iter( f_buffers[page].begin() );
-            //std::fill( page_iter, page_iter + sz, 0 );  // Does this need to happen since we now clear the full buffer above in the constructor?
             f_buffers[page].fill( 0, sz, 0 );
             f_size += sz;
         }
@@ -397,14 +387,12 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         int page(offset >> BLOCK_MANAGER_BUFFER_BITS);
         const int sz(std::min(BLOCK_MANAGER_BUFFER_SIZE - pos, bufsize));
         int buffer_size(bufsize);
-        //std::copy( buffer, buffer + sz, f_buffers[page].begin() + pos );
         f_buffers[page].copy_from( buffer, pos, sz );
         buffer += sz;
         buffer_size -= sz;
         // copy entire blocks if possible
         while(buffer_size >= BLOCK_MANAGER_BUFFER_SIZE)
         {
-            //std::copy( buffer, buffer + BLOCK_MANAGER_BUFFER_SIZE, f_buffers[++page].begin() );
             f_buffers[++page].copy_from( buffer, 0, BLOCK_MANAGER_BUFFER_SIZE );
             buffer      += BLOCK_MANAGER_BUFFER_SIZE;
             buffer_size -= BLOCK_MANAGER_BUFFER_SIZE;
@@ -412,7 +400,6 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         // copy the remainder if any
         if(buffer_size > 0)
         {
-            //std::copy( buffer, buffer + buffer_size, f_buffers[page+1].begin() );
             f_buffers[page+1].copy_from( buffer, 0, buffer_size );
         }
     }
