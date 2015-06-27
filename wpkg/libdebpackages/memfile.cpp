@@ -266,7 +266,7 @@ void memory_file::block_manager::buffer_t::copy_from( const char * buffer, const
 void memory_file::block_manager::buffer_t::fill( const int offset, const int len, char val )
 {
     const auto& buff_pos( f_buffer.begin() + offset );
-    std::fill( buff_pos, buff_pos + len, 0 );
+    std::fill( buff_pos, buff_pos + len, val );
 }
 
 
