@@ -242,6 +242,61 @@ void memory_file::block_manager::clear()
     f_available_size = 0;
 }
 
+
+
+memory_file::block_manager::buffer_t::buffer_t()
+    : f_buffer( BLOCK_MANAGER_BUFFER_SIZE, 0 )
+{
+}
+
+
+void memory_file::block_manager::buffer_t::copy_to( char * buffer, const int offset, const int len ) const
+{
+    const auto bufpos = f_buffer.begin() + offset;
+    std::copy( bufpos , bufpos + len , buffer );
+}
+
+
+void memory_file::block_manager::buffer_t::copy_from( const char * buffer, const int offset, const int len )
+{
+    std::copy( buffer, buffer + len, f_buffer.begin() + offset );
+}
+
+
+void memory_file::block_manager::buffer_t::fill( const int offset, const int len, char val )
+{
+    const auto& buff_pos( f_buffer.begin() + offset );
+    std::fill( buff_pos, buff_pos + len, 0 );
+}
+
+
+int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs ) const
+{
+    if( f_buffer == rhs.f_buffer )
+    {
+        return 0;
+    }
+
+    return (f_buffer < rhs.f_buffer)? -1: 1;
+}
+
+
+int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs, const int len ) const
+{
+    if( std::equal( f_buffer.begin(), f_buffer.begin() + len, rhs.f_buffer.begin() ) )
+    {
+        return 0;
+    }
+
+    if( std::lexicographical_compare( f_buffer.begin(), f_buffer.end() + len, rhs.f_buffer.begin(), rhs.f_buffer.end() + len ) )
+    {
+        return -1;
+    }
+
+    return 1;
+}
+
+
 int memory_file::block_manager::read(char *buffer, int offset, int bufsize) const
 {
     if(offset < 0 || offset > f_size)
@@ -259,8 +314,9 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
         int page(offset >> BLOCK_MANAGER_BUFFER_BITS);
         int sz(std::min(bufsize, BLOCK_MANAGER_BUFFER_SIZE - pos));
         {
-            const auto bufpos = f_buffers[page].begin() + pos;
-            std::copy( bufpos , bufpos + sz , buffer );
+            //const auto bufpos = f_buffers[page].begin() + pos;
+            //std::copy( bufpos , bufpos + sz , buffer );
+            f_buffers[page].copy_to( buffer, pos, sz );
         }
         buffer += sz;
         // copy full pages at once unless size left is less than a page
@@ -268,8 +324,9 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
         while(size_left >= BLOCK_MANAGER_BUFFER_SIZE)
         {
             ++page;
-            const auto bufpos = f_buffers[page].begin();
-            std::copy( bufpos, bufpos + BLOCK_MANAGER_BUFFER_SIZE, buffer );
+            //const auto bufpos = f_buffers[page].begin();
+            //std::copy( bufpos, bufpos + BLOCK_MANAGER_BUFFER_SIZE, buffer );
+            f_buffers[page].copy_to( buffer, 0, BLOCK_MANAGER_BUFFER_SIZE );
             buffer += BLOCK_MANAGER_BUFFER_SIZE;
             size_left -= BLOCK_MANAGER_BUFFER_SIZE;
         }
@@ -277,8 +334,9 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
         if(size_left > 0)
         {
             // page is not incremented yet
-            const auto bufpos = f_buffers[page + 1].begin();
-            std::copy( bufpos, bufpos + size_left, buffer );
+            //const auto bufpos = f_buffers[page + 1].begin();
+            //std::copy( bufpos, bufpos + size_left, buffer );
+            f_buffers[page+1].copy_to( buffer, 0, size_left );
         }
     }
     return bufsize;
@@ -306,7 +364,7 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
     // allocate blocks to satisfy the total size
     while(total > f_available_size)
     {
-        f_buffers.push_back( buffer_t( BLOCK_MANAGER_BUFFER_SIZE, 0 ) );
+        f_buffers.push_back( buffer_t() );
         f_available_size += BLOCK_MANAGER_BUFFER_SIZE;
     }
 
@@ -316,15 +374,17 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         int pos(f_size & (BLOCK_MANAGER_BUFFER_SIZE - 1));
         int page(f_size >> BLOCK_MANAGER_BUFFER_BITS);
         int sz(std::min(offset - f_size, BLOCK_MANAGER_BUFFER_SIZE - pos));
-        const auto& buff_pos( f_buffers[page].begin() + pos );
-        std::fill( buff_pos, buff_pos + sz, 0 );
+        //const auto& buff_pos( f_buffers[page].begin() + pos );
+        //std::fill( buff_pos, buff_pos + sz, 0 );
+        f_buffers[page].fill( pos, sz, 0 );
         f_size += sz;
         while(offset > f_size)
         {
             ++page;
             sz = std::min(offset - f_size, BLOCK_MANAGER_BUFFER_SIZE);
-            const auto& page_iter( f_buffers[page].begin() );
-            std::fill( page_iter, page_iter + sz, 0 );  // Does this need to happen since we now clear the full buffer above in the constructor?
+            //const auto& page_iter( f_buffers[page].begin() );
+            //std::fill( page_iter, page_iter + sz, 0 );  // Does this need to happen since we now clear the full buffer above in the constructor?
+            f_buffers[page].fill( 0, sz, 0 );
             f_size += sz;
         }
     }
@@ -337,20 +397,23 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         int page(offset >> BLOCK_MANAGER_BUFFER_BITS);
         const int sz(std::min(BLOCK_MANAGER_BUFFER_SIZE - pos, bufsize));
         int buffer_size(bufsize);
-        std::copy( buffer, buffer + sz, f_buffers[page].begin() + pos );
+        //std::copy( buffer, buffer + sz, f_buffers[page].begin() + pos );
+        f_buffers[page].copy_from( buffer, pos, sz );
         buffer += sz;
         buffer_size -= sz;
         // copy entire blocks if possible
         while(buffer_size >= BLOCK_MANAGER_BUFFER_SIZE)
         {
-            std::copy( buffer, buffer + BLOCK_MANAGER_BUFFER_SIZE, f_buffers[++page].begin() );
+            //std::copy( buffer, buffer + BLOCK_MANAGER_BUFFER_SIZE, f_buffers[++page].begin() );
+            f_buffers[++page].copy_from( buffer, 0, BLOCK_MANAGER_BUFFER_SIZE );
             buffer      += BLOCK_MANAGER_BUFFER_SIZE;
             buffer_size -= BLOCK_MANAGER_BUFFER_SIZE;
         }
         // copy the remainder if any
         if(buffer_size > 0)
         {
-            std::copy( buffer, buffer + buffer_size, f_buffers[page+1].begin() );
+            //std::copy( buffer, buffer + buffer_size, f_buffers[page+1].begin() );
+            f_buffers[page+1].copy_from( buffer, 0, buffer_size );
         }
     }
 
@@ -365,27 +428,14 @@ int memory_file::block_manager::compare(const block_manager& rhs) const
     int     page(0);
     for(; sz >= BLOCK_MANAGER_BUFFER_SIZE; sz -= BLOCK_MANAGER_BUFFER_SIZE, ++page)
     {
-        const auto& lhs_page( f_buffers[page]     );
-        const auto& rhs_page( rhs.f_buffers[page] );
-        if( lhs_page != rhs_page )
+        const int ret_val = f_buffers[page].compare( rhs.f_buffers[page] );
+        if( ret_val )
         {
-            return (lhs_page < rhs_page)? -1: 1;
+            return ret_val;
         }
     }
 
-    const auto& lhs_page( f_buffers[page]     );
-    const auto& rhs_page( rhs.f_buffers[page] );
-    if( std::equal( lhs_page.begin(), lhs_page.begin() + sz, rhs_page.begin() ) )
-    {
-        return 0;
-    }
-
-    if( std::lexicographical_compare( lhs_page.begin(), lhs_page.end() + sz, rhs_page.begin(), rhs_page.end() + sz ) )
-    {
-        return -1;
-    }
-
-    return 1;
+    return f_buffers[page].compare( rhs.f_buffers[page], sz );
 }
 
 memory_file::file_format_t memory_file::block_manager::data_to_format(int offset, int /*bufsize*/ ) const

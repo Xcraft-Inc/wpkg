@@ -252,7 +252,22 @@ public:
         file_format_t data_to_format(int offset, int size) const;
 
     private:
-        typedef std::vector<char>           buffer_t;
+        class buffer_t
+        {
+            public:
+                buffer_t();
+
+                void copy_to   (       char * buffer, const int offset, const int len ) const;
+                void copy_from ( const char * buffer, const int offset, const int len );
+                void fill      ( const int offset, const int len, char val );
+
+                int compare( const buffer_t& rhs ) const;
+                int compare( const buffer_t& rhs, const int len ) const;
+
+            private:
+                std::vector<char>   f_buffer;
+        };
+
         typedef std::vector<buffer_t>       buffer_list_t;
 
         controlled_vars::zint32_t           f_size;
