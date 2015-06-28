@@ -244,6 +244,9 @@ void memory_file::block_manager::clear()
 
 
 
+/** \class buffer_t
+ *
+ */
 memory_file::block_manager::buffer_t::buffer_t()
     : f_buffer( BLOCK_MANAGER_BUFFER_SIZE, 0 )
 {
@@ -345,15 +348,6 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
 
     // compute total size
     int total(offset + bufsize);
-
-    // Increased the maximum size to 1Gb instead of 128Mb
-    // I think we should have a command line flag so you can impose a limit
-    // although there should be no reason other than package optimization
-    // (i.e. make sure you don't include the "wrong" thing in your packages)
-    if(total > 1024 * 1024 * 1024)
-    {
-        throw memfile_exception_parameter("memory file size too large (over 1Gb?!)");
-    }
 
     // allocate blocks to satisfy the total size
     while(total > f_available_size)

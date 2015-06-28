@@ -98,12 +98,11 @@ if( CPPUNIT_FOUND )
         ${CPPUNIT_QT4}
     )
 
-    add_custom_target( run_unit_tests
-        COMMAND mkdir -p tmp && tests/unittests/unittest
-            --tmp tmp --wpkg tools/wpkg
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        DEPENDS ${PROJECT_NAME}
-    )
+	set( TMPDIR "${CMAKE_BINARY_DIR}/tmp" )
+	if( NOT EXISTS ${TMPDIR} )
+		file( MAKE_DIRECTORY ${TMPDIR} )
+	endif()
+	add_test( unittests ${PROJECT_NAME} --tmp ${TMPDIR} --wpkg ${CMAKE_BINARY_DIR}/tools/wpkg_static${CMAKE_EXECUTABLE_SUFFIX} )
 
 endif( CPPUNIT_FOUND )
 # vim: ts=4 sw=4 et

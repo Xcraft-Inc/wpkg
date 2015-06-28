@@ -45,6 +45,8 @@ cmake_minimum_required(VERSION 2.8.4)
 
 project( wpkg_project )
 
+enable_testing()
+
 # Look in our local module dir
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 
@@ -159,7 +161,8 @@ set( WPKG_ARCHITECTURE "${WPKG_OS}-${WPKG_PROCESSOR}" )
 if( DEFINED ENV{CONTROLLED_VARS_DEBUG} )
     add_definitions( -DCONTROLLED_VARS_DEBUG )
 endif()
-if( DEFINED ENV{ADVGETOPT_THROW_FOR_EXIT} )
+set( ADVGETOPT_THROW_FOR_EXIT $ENV{ADVGETOPT_THROW_FOR_EXIT} CACHE BOOL "Throw on exit for testing." )
+if( ADVGETOPT_THROW_FOR_EXIT )
     add_definitions( -DADVGETOPT_THROW_FOR_EXIT )
 endif()
 
