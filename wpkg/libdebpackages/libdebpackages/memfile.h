@@ -31,6 +31,10 @@
 #include    "wpkgar_block.h"
 #include    "libdebpackages/wpkg_filename.h"
 
+namespace std
+{
+    typedef basic_fstream<char> fstream;
+}
 
 namespace memfile {
 
@@ -255,7 +259,8 @@ public:
         class buffer_t
         {
             public:
-                buffer_t();
+                buffer_t( const bool use_swap_file = true );
+                ~buffer_t();
 
                 void copy_to   (       char * buffer, const int offset, const int len ) const;
                 void copy_from ( const char * buffer, const int offset, const int len );
@@ -264,8 +269,13 @@ public:
                 int compare( const buffer_t& rhs ) const;
                 int compare( const buffer_t& rhs, const int len ) const;
 
+                void swap_to_file();
+                void swap_to_mem();
+
             private:
-                std::vector<char>   f_buffer;
+                std::vector<char>                     f_buffer;
+                std::string                           f_swap_file_name;
+                mutable std::shared_ptr<std::fstream> f_swap_file;
         };
 
         typedef std::vector<buffer_t>       buffer_list_t;

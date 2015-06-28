@@ -30,6 +30,8 @@
  *
  * A memory file object is capable of reading all the different type of
  * archives supported (tar, ar, wpkgar, ...) and compress or decompress
+
+
  * data with the supported compression libraries (zlib, bz2).
  *
  * The current implementation has a hard coded block size which can be a
@@ -62,22 +64,25 @@
 #include    <ctime>
 #include    <algorithm>
 #include    <iostream>
+#include    <fstream>
+#include    <sstream>
 #if defined(MO_WINDOWS)
-#include    "libdebpackages/comptr.h"
-#include    <objidl.h>
-#include    <shlobj.h>
+#   include    "libdebpackages/comptr.h"
+#   include    <objidl.h>
+#   include    <shlobj.h>
+#   include    <process.h>
 // "conditional expression is constant"
-#pragma warning(disable: 4127)
+#   pragma warning(disable: 4127)
 // "unreachable code"
-#pragma warning(disable: 4702)
+#   pragma warning(disable: 4702)
 // "unknown pragma"
-#pragma warning(disable: 4068)
+#   pragma warning(disable: 4068)
 #else
-#include    <pwd.h>
-#include    <grp.h>
-#include    <unistd.h>
+#   include    <pwd.h>
+#   include    <grp.h>
+#   include    <unistd.h>
+#   include    <sys/types.h>
 #endif
-
 
 /** \brief The memory file namespace.
  *
@@ -247,34 +252,117 @@ void memory_file::block_manager::clear()
 /** \class buffer_t
  *
  */
-memory_file::block_manager::buffer_t::buffer_t()
+memory_file::block_manager::buffer_t::buffer_t( const bool use_swap_file )
     : f_buffer( BLOCK_MANAGER_BUFFER_SIZE, 0 )
 {
+    if( use_swap_file )
+    {
+        swap_to_file();
+    }
+}
+
+memory_file::block_manager::buffer_t::~buffer_t()
+{
+    swap_to_mem();
+}
+
+
+void memory_file::block_manager::buffer_t::swap_to_file()
+{
+    static int file_count = 0;
+
+#ifdef MO_LINUX
+    const int   pid    = getpid();
+    const char* tmpdir = "/tmp/wpkg";
+#else
+    const int   pid    = _getpid();
+    const char* tmpdir = getenv( "TEMP" ) + "/wpkg";
+#endif
+    mkdir( tmpdir, 0777 );
+
+    std::stringstream ss;
+    ss << tmpdir << "/wpkg_swapfile" << "." << pid << "." << file_count++;
+    f_swap_file_name = ss.str();
+
+    // Create the file, then reopen the file in/out.
+    f_swap_file.reset( new std::fstream );
+    f_swap_file->open( f_swap_file_name, std::ios::out );
+    f_swap_file->close();
+    //
+    f_swap_file->open( f_swap_file_name );
+    if( f_swap_file->fail() )
+    {
+        throw memfile_exception_io("cannot open swap file for input/output!!!");
+    }
+    std::fill_n( f_buffer.begin(), f_buffer.size(), 0 );
+    f_swap_file->write( f_buffer.data(), f_buffer.size() );
+    f_swap_file->flush();
+    f_buffer.clear();
+}
+
+
+void memory_file::block_manager::buffer_t::swap_to_mem()
+{
+    if( f_swap_file.get() )
+    {
+        f_buffer.resize( BLOCK_MANAGER_BUFFER_SIZE );
+        std::fill_n( f_buffer.begin(), f_buffer.size(), 0 );
+        f_swap_file->read( f_buffer.data(), f_buffer.size() );
+        f_swap_file->close();
+        remove( f_swap_file_name.c_str() );
+    }
 }
 
 
 void memory_file::block_manager::buffer_t::copy_to( char * buffer, const int offset, const int len ) const
 {
-    const auto bufpos = f_buffer.begin() + offset;
-    std::copy( bufpos , bufpos + len , buffer );
+    if( f_swap_file )
+    {
+        f_swap_file->seekg( offset );
+        f_swap_file->read( buffer, len );
+    }
+    else
+    {
+        const auto bufpos = f_buffer.begin() + offset;
+        std::copy_n( bufpos, len , buffer );
+    }
 }
 
 
 void memory_file::block_manager::buffer_t::copy_from( const char * buffer, const int offset, const int len )
 {
-    std::copy( buffer, buffer + len, f_buffer.begin() + offset );
+    if( f_swap_file )
+    {
+        f_swap_file->seekp( offset );
+        f_swap_file->write( buffer, len );
+    }
+    else
+    {
+        std::copy_n( buffer, len, f_buffer.begin() + offset );
+    }
 }
 
 
 void memory_file::block_manager::buffer_t::fill( const int offset, const int len, char val )
 {
-    const auto& buff_pos( f_buffer.begin() + offset );
-    std::fill( buff_pos, buff_pos + len, val );
+    if( f_swap_file )
+    {
+        std::ostreambuf_iterator<char> begin_dest( *f_swap_file );
+        begin_dest.operator ++( offset );
+
+        std::fill_n( begin_dest, len, val );
+    }
+    else
+    {
+        const auto& buff_pos( f_buffer.begin() + offset );
+        std::fill( buff_pos, buff_pos + len, val );
+    }
 }
 
 
 int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs ) const
 {
+    // TODO: need to compare swap file
     if( f_buffer == rhs.f_buffer )
     {
         return 0;
@@ -286,6 +374,7 @@ int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs ) const
 
 int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs, const int len ) const
 {
+    // TODO: need to compare swap file
     if( std::equal( f_buffer.begin(), f_buffer.begin() + len, rhs.f_buffer.begin() ) )
     {
         return 0;
