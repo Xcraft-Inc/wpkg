@@ -45,6 +45,7 @@
 #include    "libdebpackages/tcp_client_server.h"
 
 #include    "libdebpackages/memfile.h"
+#include    "libdebpackages/wpkg_filename.h"
 #include    "libdebpackages/wpkg_stream.h"
 #include    "libdebpackages/wpkgar_block.h"
 #include    "libdebpackages/case_insensitive_string.h"
@@ -253,17 +254,19 @@ void memory_file::block_manager::clear()
  *
  */
 memory_file::block_manager::buffer_t::buffer_t( const bool use_swap_file )
-    : f_buffer( BLOCK_MANAGER_BUFFER_SIZE, 0 )
+    : f_use_swap_file(use_swap_file)
+    , f_buffer( BLOCK_MANAGER_BUFFER_SIZE, 0 )
 {
-    if( use_swap_file )
-    {
-        swap_to_file();
-    }
 }
 
 memory_file::block_manager::buffer_t::~buffer_t()
 {
-    swap_to_mem();
+    if( !f_swap_file_name.empty() )
+    {
+        // There is some kind of bug, because the files are not being cleaned up correctly...
+        wpkg_filename::uri_filename dir( f_swap_file_name );
+        dir.os_unlink();
+    }
 }
 
 
@@ -278,91 +281,93 @@ void memory_file::block_manager::buffer_t::swap_to_file()
     const int   pid    = _getpid();
     const char* tmpdir = getenv( "TEMP" ) + "/wpkg";
 #endif
-    mkdir( tmpdir, 0777 );
+    wpkg_filename::uri_filename dir( tmpdir );
+    if( !dir.exists() )
+    {
+        dir.os_mkdir_p();
+    }
 
     std::stringstream ss;
-    ss << tmpdir << "/wpkg_swapfile" << "." << pid << "." << file_count++;
+    ss << tmpdir << "/wpkg_swapfile" << "." << pid << ".";
+    ss.width(8);
+    ss.fill('0');
+    ss << file_count++;
     f_swap_file_name = ss.str();
 
     // Create the file, then reopen the file in/out.
-    f_swap_file.reset( new std::fstream );
-    f_swap_file->open( f_swap_file_name, std::ios::out );
-    f_swap_file->close();
-    //
-    f_swap_file->open( f_swap_file_name );
-    if( f_swap_file->fail() )
+    std::ofstream swap_file;
+    swap_file.open( f_swap_file_name, std::ios::trunc );
+    if( swap_file.fail() )
     {
         throw memfile_exception_io("cannot open swap file for input/output!!!");
     }
-    std::fill_n( f_buffer.begin(), f_buffer.size(), 0 );
-    f_swap_file->write( f_buffer.data(), f_buffer.size() );
-    f_swap_file->flush();
+    swap_file.write( f_buffer.data(), f_buffer.size() );
+    swap_file.close();
     f_buffer.clear();
 }
 
 
-void memory_file::block_manager::buffer_t::swap_to_mem()
+void memory_file::block_manager::buffer_t::swap_to_mem() const
 {
-    if( f_swap_file.get() )
-    {
-        f_buffer.resize( BLOCK_MANAGER_BUFFER_SIZE );
-        std::fill_n( f_buffer.begin(), f_buffer.size(), 0 );
-        f_swap_file->read( f_buffer.data(), f_buffer.size() );
-        f_swap_file->close();
-        remove( f_swap_file_name.c_str() );
-    }
+    f_buffer.resize( BLOCK_MANAGER_BUFFER_SIZE, 0 );
+
+    std::ifstream swap_file;
+    swap_file.open( f_swap_file_name );
+    swap_file.read( f_buffer.data(), f_buffer.size() );
+    swap_file.close();
 }
 
 
 void memory_file::block_manager::buffer_t::copy_to( char * buffer, const int offset, const int len ) const
 {
-    if( f_swap_file )
+    if( f_use_swap_file )
     {
-        f_swap_file->seekg( offset );
-        f_swap_file->read( buffer, len );
+        swap_to_mem();
     }
-    else
-    {
-        const auto bufpos = f_buffer.begin() + offset;
-        std::copy_n( bufpos, len , buffer );
-    }
+
+    std::copy_n( f_buffer.begin() + offset, len , buffer );
 }
 
 
 void memory_file::block_manager::buffer_t::copy_from( const char * buffer, const int offset, const int len )
 {
-    if( f_swap_file )
+    if( f_use_swap_file )
     {
-        f_swap_file->seekp( offset );
-        f_swap_file->write( buffer, len );
+        swap_to_mem();
     }
-    else
+
+    std::copy_n( buffer, len, f_buffer.begin() + offset );
+
+    if( f_use_swap_file )
     {
-        std::copy_n( buffer, len, f_buffer.begin() + offset );
+        swap_to_file();
     }
 }
 
 
 void memory_file::block_manager::buffer_t::fill( const int offset, const int len, char val )
 {
-    if( f_swap_file )
+    if( f_use_swap_file )
     {
-        std::ostreambuf_iterator<char> begin_dest( *f_swap_file );
-        begin_dest.operator ++( offset );
-
-        std::fill_n( begin_dest, len, val );
+        swap_to_mem();
     }
-    else
+
+    std::fill_n( f_buffer.begin() + offset, len, val );
+
+    if( f_use_swap_file )
     {
-        const auto& buff_pos( f_buffer.begin() + offset );
-        std::fill( buff_pos, buff_pos + len, val );
+        swap_to_file();
     }
 }
 
 
 int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs ) const
 {
-    // TODO: need to compare swap file
+    if( f_use_swap_file )
+    {
+        swap_to_mem();
+    }
+
     if( f_buffer == rhs.f_buffer )
     {
         return 0;
@@ -374,7 +379,11 @@ int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs ) const
 
 int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs, const int len ) const
 {
-    // TODO: need to compare swap file
+    if( f_use_swap_file )
+    {
+        swap_to_mem();
+    }
+
     if( std::equal( f_buffer.begin(), f_buffer.begin() + len, rhs.f_buffer.begin() ) )
     {
         return 0;
@@ -406,7 +415,7 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
         int page(offset >> BLOCK_MANAGER_BUFFER_BITS);
         int sz(std::min(bufsize, BLOCK_MANAGER_BUFFER_SIZE - pos));
         {
-            f_buffers[page].copy_to( buffer, pos, sz );
+            f_buffers[page]->copy_to( buffer, pos, sz );
         }
         buffer += sz;
         // copy full pages at once unless size left is less than a page
@@ -414,7 +423,7 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
         while(size_left >= BLOCK_MANAGER_BUFFER_SIZE)
         {
             ++page;
-            f_buffers[page].copy_to( buffer, 0, BLOCK_MANAGER_BUFFER_SIZE );
+            f_buffers[page]->copy_to( buffer, 0, BLOCK_MANAGER_BUFFER_SIZE );
             buffer += BLOCK_MANAGER_BUFFER_SIZE;
             size_left -= BLOCK_MANAGER_BUFFER_SIZE;
         }
@@ -422,7 +431,7 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
         if(size_left > 0)
         {
             // page is not incremented yet
-            f_buffers[page+1].copy_to( buffer, 0, size_left );
+            f_buffers[page+1]->copy_to( buffer, 0, size_left );
         }
     }
     return bufsize;
@@ -441,7 +450,7 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
     // allocate blocks to satisfy the total size
     while(total > f_available_size)
     {
-        f_buffers.push_back( buffer_t() );
+        f_buffers.push_back( static_cast<buffer_ptr_t>(new buffer_t()) );
         f_available_size += BLOCK_MANAGER_BUFFER_SIZE;
     }
 
@@ -451,13 +460,13 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         int pos(f_size & (BLOCK_MANAGER_BUFFER_SIZE - 1));
         int page(f_size >> BLOCK_MANAGER_BUFFER_BITS);
         int sz(std::min(offset - f_size, BLOCK_MANAGER_BUFFER_SIZE - pos));
-        f_buffers[page].fill( pos, sz, 0 );
+        f_buffers[page]->fill( pos, sz, 0 );
         f_size += sz;
         while(offset > f_size)
         {
             ++page;
             sz = std::min(offset - f_size, BLOCK_MANAGER_BUFFER_SIZE);
-            f_buffers[page].fill( 0, sz, 0 );
+            f_buffers[page]->fill( 0, sz, 0 );
             f_size += sz;
         }
     }
@@ -470,20 +479,20 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         int page(offset >> BLOCK_MANAGER_BUFFER_BITS);
         const int sz(std::min(BLOCK_MANAGER_BUFFER_SIZE - pos, bufsize));
         int buffer_size(bufsize);
-        f_buffers[page].copy_from( buffer, pos, sz );
+        f_buffers[page]->copy_from( buffer, pos, sz );
         buffer += sz;
         buffer_size -= sz;
         // copy entire blocks if possible
         while(buffer_size >= BLOCK_MANAGER_BUFFER_SIZE)
         {
-            f_buffers[++page].copy_from( buffer, 0, BLOCK_MANAGER_BUFFER_SIZE );
+            f_buffers[++page]->copy_from( buffer, 0, BLOCK_MANAGER_BUFFER_SIZE );
             buffer      += BLOCK_MANAGER_BUFFER_SIZE;
             buffer_size -= BLOCK_MANAGER_BUFFER_SIZE;
         }
         // copy the remainder if any
         if(buffer_size > 0)
         {
-            f_buffers[page+1].copy_from( buffer, 0, buffer_size );
+            f_buffers[page+1]->copy_from( buffer, 0, buffer_size );
         }
     }
 
@@ -498,14 +507,14 @@ int memory_file::block_manager::compare(const block_manager& rhs) const
     int     page(0);
     for(; sz >= BLOCK_MANAGER_BUFFER_SIZE; sz -= BLOCK_MANAGER_BUFFER_SIZE, ++page)
     {
-        const int ret_val = f_buffers[page].compare( rhs.f_buffers[page] );
+        const int ret_val = f_buffers[page]->compare( *rhs.f_buffers[page] );
         if( ret_val )
         {
             return ret_val;
         }
     }
 
-    return f_buffers[page].compare( rhs.f_buffers[page], sz );
+    return f_buffers[page]->compare( *rhs.f_buffers[page], sz );
 }
 
 memory_file::file_format_t memory_file::block_manager::data_to_format(int offset, int /*bufsize*/ ) const

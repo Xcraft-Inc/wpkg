@@ -3636,7 +3636,7 @@ void uri_filename::os_symlink(const uri_filename& destination) const
         }
         if(retval == -1)
         {
-            throw memfile::memfile_exception_io("I/O error creating soft-link \"" + f_original + " -> " + destination.f_original + "\"");
+            throw wpkg_filename_exception_io("I/O error creating soft-link \"" + f_original + " -> " + destination.f_original + "\"");
         }
     }
 }

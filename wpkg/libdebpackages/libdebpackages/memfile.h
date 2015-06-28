@@ -31,11 +31,6 @@
 #include    "wpkgar_block.h"
 #include    "libdebpackages/wpkg_filename.h"
 
-namespace std
-{
-    typedef basic_fstream<char> fstream;
-}
-
 namespace memfile {
 
 // generic memfile exception
@@ -270,15 +265,19 @@ public:
                 int compare( const buffer_t& rhs, const int len ) const;
 
                 void swap_to_file();
-                void swap_to_mem();
+                void swap_to_mem() const;
 
             private:
-                std::vector<char>                     f_buffer;
+                bool                                  f_use_swap_file;
                 std::string                           f_swap_file_name;
-                mutable std::shared_ptr<std::fstream> f_swap_file;
+                mutable std::vector<char>             f_buffer;
+
+                // No copy construction
+                buffer_t( const buffer_t& );
         };
 
-        typedef std::vector<buffer_t>       buffer_list_t;
+        typedef std::shared_ptr<buffer_t>   buffer_ptr_t;
+        typedef std::vector<buffer_ptr_t>   buffer_list_t;
 
         controlled_vars::zint32_t           f_size;
         controlled_vars::zint32_t           f_available_size;

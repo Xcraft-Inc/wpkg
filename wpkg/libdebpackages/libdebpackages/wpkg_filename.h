@@ -41,7 +41,7 @@
 namespace wpkg_filename
 {
 
-// generic memfile exception
+// generic wpkg_filename exception
 class wpkg_filename_exception : public std::runtime_error
 {
 public:
