@@ -261,11 +261,35 @@ memory_file::block_manager::buffer_t::buffer_t( const bool use_swap_file )
 
 memory_file::block_manager::buffer_t::~buffer_t()
 {
-    if( !f_swap_file_name.empty() )
+    // There is some kind of bug, because the files are not being cleaned up correctly...
+    f_swap_file_name.os_unlink();
+}
+
+
+bool memory_file::block_manager::buffer_t::get_swap_to_file() const
+{
+    return f_use_swap_file;
+}
+
+
+void memory_file::block_manager::buffer_t::set_swap_to_file( const bool swap_it )
+{
+    if( swap_it )
     {
-        // There is some kind of bug, because the files are not being cleaned up correctly...
-        wpkg_filename::uri_filename dir( f_swap_file_name );
-        dir.os_unlink();
+        if( swap_it != f_use_swap_file )
+        {
+            swap_to_file();
+        }
+        f_use_swap_file = true;
+    }
+    else
+    {
+        if( swap_it != f_use_swap_file )
+        {
+            swap_to_mem();
+            f_swap_file_name.os_unlink();
+        }
+        f_use_swap_file = false;
     }
 }
 
@@ -292,11 +316,11 @@ void memory_file::block_manager::buffer_t::swap_to_file()
     ss.width(8);
     ss.fill('0');
     ss << file_count++;
-    f_swap_file_name = ss.str();
+    f_swap_file_name.set_filename( ss.str() );
 
     // Create the file, then reopen the file in/out.
     std::ofstream swap_file;
-    swap_file.open( f_swap_file_name, std::ios::trunc );
+    swap_file.open( f_swap_file_name.original_filename(), std::ios::trunc | std::ios::binary );
     if( swap_file.fail() )
     {
         throw memfile_exception_io("cannot open swap file for input/output!!!");
@@ -312,7 +336,7 @@ void memory_file::block_manager::buffer_t::swap_to_mem() const
     f_buffer.resize( BLOCK_MANAGER_BUFFER_SIZE, 0 );
 
     std::ifstream swap_file;
-    swap_file.open( f_swap_file_name );
+    swap_file.open( f_swap_file_name.original_filename(), std::ios::binary );
     swap_file.read( f_buffer.data(), f_buffer.size() );
     swap_file.close();
 }
@@ -398,6 +422,19 @@ int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs, const in
 }
 
 
+memory_file::block_manager::swap_in_raii::swap_in_raii( memory_file::block_manager::buffer_ptr_t buffer )
+    : f_buffer(buffer)
+    , f_old_state( f_buffer->get_swap_to_file() )
+{
+    f_buffer->set_swap_to_file( false );
+}
+
+memory_file::block_manager::swap_in_raii::~swap_in_raii()
+{
+    f_buffer->set_swap_to_file( f_old_state );
+}
+
+
 int memory_file::block_manager::read(char *buffer, int offset, int bufsize) const
 {
     if(offset < 0 || offset > f_size)
@@ -413,6 +450,7 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
         // copy bytes between offset and next block boundary
         int pos(offset & (BLOCK_MANAGER_BUFFER_SIZE - 1));
         int page(offset >> BLOCK_MANAGER_BUFFER_BITS);
+        swap_in_raii sir( f_buffers[page] );
         int sz(std::min(bufsize, BLOCK_MANAGER_BUFFER_SIZE - pos));
         {
             f_buffers[page]->copy_to( buffer, pos, sz );
@@ -450,7 +488,7 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
     // allocate blocks to satisfy the total size
     while(total > f_available_size)
     {
-        f_buffers.push_back( static_cast<buffer_ptr_t>(new buffer_t()) );
+        f_buffers.push_back( static_cast<buffer_ptr_t>(new buffer_t) );
         f_available_size += BLOCK_MANAGER_BUFFER_SIZE;
     }
 
@@ -460,6 +498,7 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         int pos(f_size & (BLOCK_MANAGER_BUFFER_SIZE - 1));
         int page(f_size >> BLOCK_MANAGER_BUFFER_BITS);
         int sz(std::min(offset - f_size, BLOCK_MANAGER_BUFFER_SIZE - pos));
+        swap_in_raii sir( f_buffers[page] );
         f_buffers[page]->fill( pos, sz, 0 );
         f_size += sz;
         while(offset > f_size)
@@ -505,6 +544,7 @@ int memory_file::block_manager::compare(const block_manager& rhs) const
 {
     int32_t sz( std::min(f_size, rhs.f_size) );
     int     page(0);
+
     for(; sz >= BLOCK_MANAGER_BUFFER_SIZE; sz -= BLOCK_MANAGER_BUFFER_SIZE, ++page)
     {
         const int ret_val = f_buffers[page]->compare( *rhs.f_buffers[page] );
