@@ -26,6 +26,7 @@
 class MemfileUnitTests : public CPPUNIT_NS::TestFixture
 {
         CPPUNIT_TEST_SUITE( MemfileUnitTests );
+        CPPUNIT_TEST( buffer1      );
         CPPUNIT_TEST( compression1 );
         CPPUNIT_TEST( compression2 );
         CPPUNIT_TEST( compression3 );
@@ -43,6 +44,7 @@ public:
 protected:
         void compression(int level);
 
+        void buffer1();
         void compression1();
         void compression2();
         void compression3();

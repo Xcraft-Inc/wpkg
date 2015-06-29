@@ -74,6 +74,20 @@ void MemfileUnitTests::compression(int zlevel)
     }
 }
 
+void MemfileUnitTests::buffer1()
+{
+    memfile::memory_file::block_manager::buffer_t buf( true /*swap to file*/ );
+    wpkg_filename::uri_filename swap_file_name( buf.get_swap_file_name() );
+    // TODO:
+    //
+    // Write out some data.
+    // Read it back in, make sure it's correct.
+    // Test the swapfile, make sure it has sane contents.
+    // Make sure that we can swap in and out of memory, and the data stays
+    // consistent.
+    // Make sure the swap file is deleted when the object is destroyed.
+}
+
 void MemfileUnitTests::compression1()
 {
     compression(1);

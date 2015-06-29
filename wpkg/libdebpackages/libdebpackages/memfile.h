@@ -250,49 +250,40 @@ public:
 
         file_format_t data_to_format(int offset, int size) const;
 
-    private:
         class buffer_t
         {
-            public:
-                buffer_t( const bool use_swap_file = false );
-                ~buffer_t();
+        public:
+            buffer_t( const bool use_swap_file = false );
+            ~buffer_t();
 
-                void copy_to   (       char * buffer, const int offset, const int len ) const;
-                void copy_from ( const char * buffer, const int offset, const int len );
-                void fill      ( const int offset, const int len, char val );
+            void copy_to   (       char * buffer, const int offset, const int len ) const;
+            void copy_from ( const char * buffer, const int offset, const int len );
+            void fill      ( const int offset, const int len, char val );
 
-                int compare( const buffer_t& rhs ) const;
-                int compare( const buffer_t& rhs, const int len ) const;
+            int compare( const buffer_t& rhs ) const;
+            int compare( const buffer_t& rhs, const int len ) const;
 
-                bool get_swap_to_file() const;
-                void set_swap_to_file( const bool swap_it );
+            bool get_swap_to_file() const;
+            void set_swap_to_file( const bool swap_it );
 
-            private:
-                bool                                  f_use_swap_file;
-                wpkg_filename::uri_filename           f_swap_file_name;
-                mutable std::vector<char>             f_buffer;
+            wpkg_filename::uri_filename get_swap_file_name() const;
 
-                // No copy construction
-                buffer_t( const buffer_t& );
+        private:
+            bool                                  f_use_swap_file;
+            wpkg_filename::uri_filename           f_swap_file_name;
+            mutable std::vector<char>             f_buffer;
 
-                void swap_to_file();
-                void swap_to_mem() const;
+            // No copy construction
+            buffer_t( const buffer_t& );
+
+            void swap_to_file();
+            void swap_to_mem() const;
         };
 
         typedef std::shared_ptr<buffer_t>   buffer_ptr_t;
         typedef std::vector<buffer_ptr_t>   buffer_list_t;
 
-        class swap_in_raii
-        {
-        public:
-                swap_in_raii( buffer_ptr_t buffer );
-                ~swap_in_raii();
-
-        private:
-                buffer_ptr_t f_buffer;
-                bool         f_old_state;
-        };
-
+    private:
         controlled_vars::zint32_t           f_size;
         controlled_vars::zint32_t           f_available_size;
         buffer_list_t                       f_buffers;

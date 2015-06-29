@@ -422,17 +422,35 @@ int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs, const in
 }
 
 
-memory_file::block_manager::swap_in_raii::swap_in_raii( memory_file::block_manager::buffer_ptr_t buffer )
-    : f_buffer(buffer)
-    , f_old_state( f_buffer->get_swap_to_file() )
+wpkg_filename::uri_filename memory_file::block_manager::buffer_t::get_swap_file_name() const
 {
-    f_buffer->set_swap_to_file( false );
+    return f_swap_file_name;
 }
 
-memory_file::block_manager::swap_in_raii::~swap_in_raii()
+
+namespace
 {
-    f_buffer->set_swap_to_file( f_old_state );
+    class swap_in_raii
+    {
+    public:
+        swap_in_raii( memory_file::block_manager::buffer_ptr_t buffer )
+            : f_buffer(buffer)
+            , f_old_state( f_buffer->get_swap_to_file() )
+        {
+            f_buffer->set_swap_to_file( false );
+        }
+
+        ~swap_in_raii()
+        {
+            f_buffer->set_swap_to_file( f_old_state );
+        }
+
+    private:
+        memory_file::block_manager::buffer_ptr_t f_buffer;
+        bool                                     f_old_state;
+    };
 }
+// namespace
 
 
 int memory_file::block_manager::read(char *buffer, int offset, int bufsize) const
