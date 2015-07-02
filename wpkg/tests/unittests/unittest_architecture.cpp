@@ -26,9 +26,6 @@
 
 
 
-CPPUNIT_TEST_SUITE_REGISTRATION( ArchitectureUnitTests );
-
-
 namespace
 {
 

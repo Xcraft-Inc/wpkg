@@ -128,7 +128,7 @@ void ExprUnitTests::bad_literals()
     CPPUNIT_ASSERT_THROW(compute_long("(0x) * 2"), libexpr::syntax_error);
 
     // bad octal
-    CPPUNIT_ASSERT_THROW(compute_long("03 + 08"), libexpr::syntax_error);
+    CPPUNIT_ASSERT_THROW(compute_long("03 + 08"),  libexpr::syntax_error);
     CPPUNIT_ASSERT_THROW(compute_long("033 + 09"), libexpr::syntax_error);
 
     // bad float
@@ -137,13 +137,13 @@ void ExprUnitTests::bad_literals()
     CPPUNIT_ASSERT_THROW(compute_long("0.3e-a"), libexpr::syntax_error);
 
     // bad character
-    CPPUNIT_ASSERT_THROW(compute_long("'h + 3"), libexpr::syntax_error);
-    CPPUNIT_ASSERT_THROW(compute_long("'h"), libexpr::syntax_error);
+    CPPUNIT_ASSERT_THROW(compute_long("'h + 3"),     libexpr::syntax_error);
+    CPPUNIT_ASSERT_THROW(compute_long("'h"),         libexpr::syntax_error);
     CPPUNIT_ASSERT_THROW(compute_long("'\\x74 + 3"), libexpr::syntax_error);
-    CPPUNIT_ASSERT_THROW(compute_long("'\\x74"), libexpr::syntax_error);
+    CPPUNIT_ASSERT_THROW(compute_long("'\\x74"),     libexpr::syntax_error);
 
     // bad string
-    CPPUNIT_ASSERT_THROW(compute_long("\"hello world"), libexpr::syntax_error);
+    CPPUNIT_ASSERT_THROW(compute_long("\"hello world"),       libexpr::syntax_error);
     CPPUNIT_ASSERT_THROW(compute_long("\"hello\\xqaworld\""), libexpr::syntax_error);
 
     // bad conditional
@@ -159,17 +159,17 @@ void ExprUnitTests::bad_variables()
     CPPUNIT_ASSERT_THROW(compute_long("a--"), libexpr::undefined_variable);
     CPPUNIT_ASSERT_THROW(compute_long("--a"), libexpr::undefined_variable);
 
-    CPPUNIT_ASSERT_THROW(compute_long("a = b;"), libexpr::undefined_variable); // cannot get an undefined variable
-    CPPUNIT_ASSERT_THROW(compute_long("a *= 5;"), libexpr::undefined_variable); // cannot get an undefined variable
-    CPPUNIT_ASSERT_THROW(compute_long("a /= 5;"), libexpr::undefined_variable); // cannot get an undefined variable
-    CPPUNIT_ASSERT_THROW(compute_long("a %= 5;"), libexpr::undefined_variable); // cannot get an undefined variable
-    CPPUNIT_ASSERT_THROW(compute_long("a += 5;"), libexpr::undefined_variable); // cannot get an undefined variable
-    CPPUNIT_ASSERT_THROW(compute_long("a -= 5;"), libexpr::undefined_variable); // cannot get an undefined variable
+    CPPUNIT_ASSERT_THROW(compute_long("a = b;"),   libexpr::undefined_variable); // cannot get an undefined variable
+    CPPUNIT_ASSERT_THROW(compute_long("a *= 5;"),  libexpr::undefined_variable); // cannot get an undefined variable
+    CPPUNIT_ASSERT_THROW(compute_long("a /= 5;"),  libexpr::undefined_variable); // cannot get an undefined variable
+    CPPUNIT_ASSERT_THROW(compute_long("a  = 5;"),  libexpr::undefined_variable); // cannot get an undefined variable
+    CPPUNIT_ASSERT_THROW(compute_long("a += 5;"),  libexpr::undefined_variable); // cannot get an undefined variable
+    CPPUNIT_ASSERT_THROW(compute_long("a -= 5;"),  libexpr::undefined_variable); // cannot get an undefined variable
     CPPUNIT_ASSERT_THROW(compute_long("a >>= 5;"), libexpr::undefined_variable); // cannot get an undefined variable
     CPPUNIT_ASSERT_THROW(compute_long("a <<= 5;"), libexpr::undefined_variable); // cannot get an undefined variable
-    CPPUNIT_ASSERT_THROW(compute_long("a &= 5;"), libexpr::undefined_variable); // cannot get an undefined variable
-    CPPUNIT_ASSERT_THROW(compute_long("a ^= 5;"), libexpr::undefined_variable); // cannot get an undefined variable
-    CPPUNIT_ASSERT_THROW(compute_long("a |= 5;"), libexpr::undefined_variable); // cannot get an undefined variable
+    CPPUNIT_ASSERT_THROW(compute_long("a &= 5;"),  libexpr::undefined_variable); // cannot get an undefined variable
+    CPPUNIT_ASSERT_THROW(compute_long("a ^= 5;"),  libexpr::undefined_variable); // cannot get an undefined variable
+    CPPUNIT_ASSERT_THROW(compute_long("a |= 5;"),  libexpr::undefined_variable); // cannot get an undefined variable
 }
 
 void ExprUnitTests::bad_expressions()

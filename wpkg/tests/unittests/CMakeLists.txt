@@ -42,17 +42,12 @@ project(unittest)
 if( NOT CMAKE_MODULE_PATH )
     set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 endif()
-include( FindCppUnit )
 
-if( CPPUNIT_FOUND )
+find_package( Catch )
 
-	add_definitions( -DNOQT )
+if( CATCH_FOUND )
 
-    #set( HAVE_QT4 1 )
-	#add_definitions( -DHAVE_QT4 )
-    #find_package( Qt4 4.8.1 REQUIRED ${ARGN} )
-    #include( ${QT_USE_FILE} )
-    #add_definitions( ${QT_DEFINITIONS} )
+	add_definitions( -DCATCH_CONFIG_PREFIX_ALL )
 
     include_directories(
         "${PROJECT_BINARY_DIR}"
@@ -67,35 +62,29 @@ if( CPPUNIT_FOUND )
         "${PROJECT_BINARY_DIR}/../../libexpr"
         "${PROJECT_SOURCE_DIR}/../../libtld/include"
         "${PROJECT_SOURCE_DIR}/../../zlib"
-        "${CPPUNIT_INCLUDE_DIR}"
+        "${CATCH_INCLUDE_DIR}"
     )
 
     add_executable( ${PROJECT_NAME}
         unittest_main.cpp
         unittest_advgetopt.cpp
-        unittest_architecture.cpp
-        unittest_control.cpp
-        unittest_expr.cpp
-        unittest_libutf8.cpp
-        unittest_memfile.cpp
-        unittest_package.cpp
-        unittest_system.cpp
-        unittest_uri_filename.cpp
-        unittest_version.cpp
+        #unittest_architecture.cpp
+        #unittest_control.cpp
+        #unittest_expr.cpp
+        #unittest_libutf8.cpp
+        #unittest_memfile.cpp
+        #unittest_package.cpp
+        #unittest_system.cpp
+        #unittest_uri_filename.cpp
+        #unittest_version.cpp
         ../../tools/license.cpp
     )
-
-    if( HAVE_QT4 )
-        set( CPPUNIT_QT4 qxcppunitd qxrunnerd )
-    endif( HAVE_QT4 )
 
     target_link_libraries( ${PROJECT_NAME}
         debpackages_static
         expr_static
         wpkg_z_static
         wpkg_bz2_static
-        ${CPPUNIT_LIBRARIES}
-        ${CPPUNIT_QT4}
     )
 
 	set( TMPDIR "${CMAKE_BINARY_DIR}/tmp" )
@@ -104,5 +93,6 @@ if( CPPUNIT_FOUND )
 	endif()
 	add_test( unittests ${PROJECT_NAME} --tmp ${TMPDIR} --wpkg ${CMAKE_BINARY_DIR}/tools/wpkg_static${CMAKE_EXECUTABLE_SUFFIX} )
 
-endif( CPPUNIT_FOUND )
+endif( CATCH_FOUND )
+
 # vim: ts=4 sw=4 et
