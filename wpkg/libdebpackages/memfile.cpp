@@ -262,7 +262,8 @@ memory_file::block_manager::buffer_t::buffer_t( const bool use_swap_file )
 memory_file::block_manager::buffer_t::~buffer_t()
 {
     // There is some kind of bug, because the files are not being cleaned up correctly...
-    f_swap_file_name.os_unlink();
+    // This should be automatic now.
+    //f_swap_file_name.os_unlink();
 }
 
 
@@ -298,21 +299,10 @@ void memory_file::block_manager::buffer_t::swap_to_file()
 {
     static int file_count = 0;
 
-#ifdef MO_LINUX
-    const int   pid    = getpid();
-    const char* tmpdir = "/tmp/wpkg";
-#else
-    const int   pid    = _getpid();
-    const char* tmpdir = getenv( "TEMP" ) + "/wpkg";
-#endif
-    wpkg_filename::uri_filename dir( tmpdir );
-    if( !dir.exists() )
-    {
-        dir.os_mkdir_p();
-    }
+    wpkg_filename::uri_filename dir( wpkg_filename::uri_filename::tmpdir( "memfile", true /*create*/ ) );
 
     std::stringstream ss;
-    ss << tmpdir << "/wpkg_swapfile" << "." << pid << ".";
+    ss << dir.original_filename() << "/wpkg_swapfile" << ".";
     ss.width(8);
     ss.fill('0');
     ss << file_count++;

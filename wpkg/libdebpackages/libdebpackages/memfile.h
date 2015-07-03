@@ -270,7 +270,7 @@ public:
 
         private:
             bool                                  f_use_swap_file;
-            wpkg_filename::uri_filename           f_swap_file_name;
+            wpkg_filename::temporary_uri_filename f_swap_file_name;
             mutable std::vector<char>             f_buffer;
 
             // No copy construction
