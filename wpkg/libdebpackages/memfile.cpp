@@ -96,8 +96,9 @@ namespace memfile
 
 #ifndef _MSC_VER
 // somehow g++ has problems with those in some cases
-const int                               memory_file::block_manager::BLOCK_MANAGER_BUFFER_BITS; // init in class
-const int                               memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE; // init in class
+const int                               memory_file::block_manager::BLOCK_MANAGER_BUFFER_BITS;    // init in class
+const int                               memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE;    // init in class
+const int                               memory_file::block_manager::BLOCK_MANAGER_BUFFER_TIMEOUT; // init in class
 
 const int                               memory_file::file_info_throw; // init in class
 const int                               memory_file::file_info_return_errors; // init in class
@@ -253,45 +254,14 @@ void memory_file::block_manager::clear()
 /** \class buffer_t
  *
  */
-memory_file::block_manager::buffer_t::buffer_t( const bool use_swap_file )
-    : f_use_swap_file(use_swap_file)
-    , f_buffer( BLOCK_MANAGER_BUFFER_SIZE, 0 )
+memory_file::block_manager::buffer_t::buffer_t( /*const bool use_swap_file*/ )
+    : f_buffer( BLOCK_MANAGER_BUFFER_SIZE, 0 )
+    , f_mod_time( time(NULL) )
 {
 }
 
 memory_file::block_manager::buffer_t::~buffer_t()
 {
-    // There is some kind of bug, because the files are not being cleaned up correctly...
-    // This should be automatic now.
-    //f_swap_file_name.os_unlink();
-}
-
-
-bool memory_file::block_manager::buffer_t::get_swap_to_file() const
-{
-    return f_use_swap_file;
-}
-
-
-void memory_file::block_manager::buffer_t::set_swap_to_file( const bool swap_it )
-{
-    if( swap_it )
-    {
-        if( swap_it != f_use_swap_file )
-        {
-            swap_to_file();
-        }
-        f_use_swap_file = true;
-    }
-    else
-    {
-        if( swap_it != f_use_swap_file )
-        {
-            swap_to_mem();
-            f_swap_file_name.os_unlink();
-        }
-        f_use_swap_file = false;
-    }
 }
 
 
@@ -306,11 +276,12 @@ void memory_file::block_manager::buffer_t::swap_to_file()
     ss.width(8);
     ss.fill('0');
     ss << file_count++;
-    f_swap_file_name.set_filename( ss.str() );
+    f_swap_file_name.reset( new wpkg_filename::temporary_uri_filename() );
+    f_swap_file_name->set_filename( ss.str() );
 
     // Create the file, then reopen the file in/out.
     std::ofstream swap_file;
-    swap_file.open( f_swap_file_name.original_filename(), std::ios::trunc | std::ios::binary );
+    swap_file.open( f_swap_file_name->original_filename(), std::ios::trunc | std::ios::binary );
     if( swap_file.fail() )
     {
         throw memfile_exception_io("cannot open swap file for input/output!!!");
@@ -326,15 +297,19 @@ void memory_file::block_manager::buffer_t::swap_to_mem() const
     f_buffer.resize( BLOCK_MANAGER_BUFFER_SIZE, 0 );
 
     std::ifstream swap_file;
-    swap_file.open( f_swap_file_name.original_filename(), std::ios::binary );
+    swap_file.open( f_swap_file_name->original_filename(), std::ios::binary );
     swap_file.read( f_buffer.data(), f_buffer.size() );
     swap_file.close();
+
+    f_swap_file_name.reset();
+
+    f_mod_time = time(NULL);
 }
 
 
 void memory_file::block_manager::buffer_t::copy_to( char * buffer, const int offset, const int len ) const
 {
-    if( f_use_swap_file )
+    if( f_swap_file_name )
     {
         swap_to_mem();
     }
@@ -345,39 +320,29 @@ void memory_file::block_manager::buffer_t::copy_to( char * buffer, const int off
 
 void memory_file::block_manager::buffer_t::copy_from( const char * buffer, const int offset, const int len )
 {
-    if( f_use_swap_file )
+    if( f_swap_file_name )
     {
         swap_to_mem();
     }
 
     std::copy_n( buffer, len, f_buffer.begin() + offset );
-
-    if( f_use_swap_file )
-    {
-        swap_to_file();
-    }
 }
 
 
 void memory_file::block_manager::buffer_t::fill( const int offset, const int len, char val )
 {
-    if( f_use_swap_file )
+    if( f_swap_file_name )
     {
         swap_to_mem();
     }
 
     std::fill_n( f_buffer.begin() + offset, len, val );
-
-    if( f_use_swap_file )
-    {
-        swap_to_file();
-    }
 }
 
 
 int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs ) const
 {
-    if( f_use_swap_file )
+    if( f_swap_file_name )
     {
         swap_to_mem();
     }
@@ -393,7 +358,7 @@ int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs ) const
 
 int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs, const int len ) const
 {
-    if( f_use_swap_file )
+    if( f_swap_file_name )
     {
         swap_to_mem();
     }
@@ -412,35 +377,131 @@ int memory_file::block_manager::buffer_t::compare( const buffer_t& rhs, const in
 }
 
 
-wpkg_filename::uri_filename memory_file::block_manager::buffer_t::get_swap_file_name() const
+bool memory_file::block_manager::buffer_t::is_swapped() const
 {
-    return f_swap_file_name;
+    return static_cast<bool>(f_swap_file_name);
 }
 
+
+wpkg_filename::uri_filename memory_file::block_manager::buffer_t::get_swap_file_name() const
+{
+    return *f_swap_file_name;
+}
+
+#if defined(MO_LINUX)
+#   include "sys/types.h"
+#   include "sys/sysinfo.h"
+#elif defined(MO_WINDOWS)
+#else
+#   error "Unknown architecture!"
+#endif
 
 namespace
 {
-    class swap_in_raii
+    class SystemMemory
     {
     public:
-        swap_in_raii( memory_file::block_manager::buffer_ptr_t buffer )
-            : f_buffer(buffer)
-            , f_old_state( f_buffer->get_swap_to_file() )
+        virtual uint64_t    get_total_virtual_memory()    const = 0;
+        virtual uint64_t    get_total_physical_memory()   const = 0;
+        virtual uint64_t    get_process_physical_memory() const = 0;
+        virtual long double get_process_percent_used()    const = 0;
+    };
+
+#ifdef MO_LINUX
+    class LinuxSystemMemory : public SystemMemory
+    {
+    public:
+        LinuxSystemMemory()
         {
-            f_buffer->set_swap_to_file( false );
+            struct sysinfo memInfo;
+            sysinfo (&memInfo);
+
+            f_total_virtual_memory  = (memInfo.totalram + memInfo.totalswap) * memInfo.mem_unit;
+            f_total_physical_memory = memInfo.totalram * memInfo.mem_unit;
+
+            FILE* file = fopen("/proc/self/status", "r");
+            f_process_physical_memory = 0;
+            char line[128];
+            while (fgets(line, 128, file) != NULL)
+            {
+                if (strncmp(line, "VmSize:", 7) == 0)
+                {
+                    f_process_physical_memory = parseLine(line) * 1024;
+                    break;
+                }
+            }
+            fclose(file);
         }
 
-        ~swap_in_raii()
+        virtual uint64_t get_total_virtual_memory()    const { return f_total_virtual_memory;    }
+        virtual uint64_t get_total_physical_memory()   const { return f_total_physical_memory;   }
+        virtual uint64_t get_process_physical_memory() const { return f_process_physical_memory; }
+
+        virtual long double get_process_percent_used() const
         {
-            f_buffer->set_swap_to_file( f_old_state );
+            return (static_cast<long double>(f_process_physical_memory) / static_cast<long double>(f_total_physical_memory)) * 100.0;
         }
 
     private:
-        memory_file::block_manager::buffer_ptr_t f_buffer;
-        bool                                     f_old_state;
+        uint64_t    f_total_virtual_memory;
+        uint64_t    f_total_physical_memory;
+        uint64_t    f_process_physical_memory;
+
+        uint64_t parseLine(char* line)
+        {
+            size_t i = strlen(line);
+            while (*line < '0' || *line > '9') line++;
+            line[i-3] = '\0';
+            i = atoi(line);
+            return static_cast<uint64_t>(i);
+        }
     };
+#else
+#endif
+
+    void OutputMemoryStats()
+    {
+#if defined(MO_LINUX)
+        LinuxSystemMemory  sysmem;
+#elif defined(MO_WINDOWS)
+        WinSystemMemory  sysmem;
+#endif
+        std::cout
+                << "Total Virtal Mem=["   << sysmem.get_total_virtual_memory()    << "], "
+                << "Total Physical Mem=[" << sysmem.get_total_physical_memory()   << "], "
+                << "process_size=["       << sysmem.get_process_physical_memory() << "], "
+                << "percent used=["       << sysmem.get_process_percent_used()    << "%]."
+                << std::endl;
+    }
 }
 // namespace
+
+
+void memory_file::block_manager::buffer_t::swap_out_if_stale( const uint32_t cur_time )
+{
+    if( !is_swapped() && (cur_time - f_mod_time > BLOCK_MANAGER_BUFFER_TIMEOUT) )
+    {
+        std::cout << "swapping out "
+                  << std::hex << this
+                  << " time=" << std::dec
+                  << f_mod_time
+                  << ", f_mod_time - cur_time=" << cur_time - f_mod_time
+                  << ", cur_time=" << cur_time
+                  << std::endl;
+        OutputMemoryStats();
+        swap_to_file();
+    }
+}
+
+
+void memory_file::block_manager::swap_out_stale_buffers() const
+{
+    const uint32_t cur_time( time(NULL) );
+    std::for_each( f_buffers.begin(), f_buffers.end(), [&cur_time]( buffer_ptr_t buf )
+    {
+        buf->swap_out_if_stale( cur_time );
+    });
+}
 
 
 int memory_file::block_manager::read(char *buffer, int offset, int bufsize) const
@@ -458,7 +519,6 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
         // copy bytes between offset and next block boundary
         int pos(offset & (BLOCK_MANAGER_BUFFER_SIZE - 1));
         int page(offset >> BLOCK_MANAGER_BUFFER_BITS);
-        swap_in_raii sir( f_buffers[page] );
         int sz(std::min(bufsize, BLOCK_MANAGER_BUFFER_SIZE - pos));
         {
             f_buffers[page]->copy_to( buffer, pos, sz );
@@ -480,6 +540,11 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
             f_buffers[page+1]->copy_to( buffer, 0, size_left );
         }
     }
+
+    // Make sure we swap out after we read 1GB in memory
+    //
+    swap_out_stale_buffers();
+
     return bufsize;
 }
 
@@ -506,7 +571,6 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         int pos(f_size & (BLOCK_MANAGER_BUFFER_SIZE - 1));
         int page(f_size >> BLOCK_MANAGER_BUFFER_BITS);
         int sz(std::min(offset - f_size, BLOCK_MANAGER_BUFFER_SIZE - pos));
-        swap_in_raii sir( f_buffers[page] );
         f_buffers[page]->fill( pos, sz, 0 );
         f_size += sz;
         while(offset > f_size)
@@ -527,12 +591,14 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         const int sz(std::min(BLOCK_MANAGER_BUFFER_SIZE - pos, bufsize));
         int buffer_size(bufsize);
         f_buffers[page]->copy_from( buffer, pos, sz );
+        //f_buffers[page]->swap_to_file();
         buffer += sz;
         buffer_size -= sz;
         // copy entire blocks if possible
         while(buffer_size >= BLOCK_MANAGER_BUFFER_SIZE)
         {
             f_buffers[++page]->copy_from( buffer, 0, BLOCK_MANAGER_BUFFER_SIZE );
+            //f_buffers[page]->swap_to_file();
             buffer      += BLOCK_MANAGER_BUFFER_SIZE;
             buffer_size -= BLOCK_MANAGER_BUFFER_SIZE;
         }
@@ -540,10 +606,15 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         if(buffer_size > 0)
         {
             f_buffers[page+1]->copy_from( buffer, 0, buffer_size );
+            //f_buffers[page+1]->swap_to_file();
         }
     }
 
     f_size = std::max(static_cast<int>(f_size), total);
+
+    // Make sure we swap out after we read 1GB in memory
+    //
+    swap_out_stale_buffers();
 
     return bufsize;
 }

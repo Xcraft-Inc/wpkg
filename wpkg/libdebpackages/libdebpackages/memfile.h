@@ -236,8 +236,9 @@ public:
     public:
         // the block manager needs buffers that are at least 1Kb in size to
         // properly work with all the possible optimizations (i.e. 10 bits)
-        static const int BLOCK_MANAGER_BUFFER_BITS = 16; // 16 bits represents buffers of 64Kb
-        static const int BLOCK_MANAGER_BUFFER_SIZE = (1 << BLOCK_MANAGER_BUFFER_BITS);
+        static const int BLOCK_MANAGER_BUFFER_BITS    = 16; // 16 bits represents buffers of 64Kb
+        static const int BLOCK_MANAGER_BUFFER_SIZE    = (1 << BLOCK_MANAGER_BUFFER_BITS);
+        static const int BLOCK_MANAGER_BUFFER_TIMEOUT = 1; // seconds
 
         block_manager();
         ~block_manager();
@@ -253,7 +254,7 @@ public:
         class buffer_t
         {
         public:
-            buffer_t( const bool use_swap_file = false );
+            buffer_t();
             ~buffer_t();
 
             void copy_to   (       char * buffer, const int offset, const int len ) const;
@@ -263,15 +264,16 @@ public:
             int compare( const buffer_t& rhs ) const;
             int compare( const buffer_t& rhs, const int len ) const;
 
-            bool get_swap_to_file() const;
-            void set_swap_to_file( const bool swap_it );
-
+            bool is_swapped() const;
             wpkg_filename::uri_filename get_swap_file_name() const;
 
+            void swap_out_if_stale( const uint32_t cur_time );
+
         private:
-            bool                                  f_use_swap_file;
-            wpkg_filename::temporary_uri_filename f_swap_file_name;
-            mutable std::vector<char>             f_buffer;
+            typedef std::shared_ptr<wpkg_filename::temporary_uri_filename> filename_t;
+            mutable filename_t          f_swap_file_name;
+            mutable std::vector<char>   f_buffer;
+            mutable uint32_t            f_mod_time;
 
             // No copy construction
             buffer_t( const buffer_t& );
@@ -287,6 +289,8 @@ public:
         controlled_vars::zint32_t           f_size;
         controlled_vars::zint32_t           f_available_size;
         buffer_list_t                       f_buffers;
+
+        void swap_out_stale_buffers() const;
     };
 
     static const int file_info_throw = 0x00;
