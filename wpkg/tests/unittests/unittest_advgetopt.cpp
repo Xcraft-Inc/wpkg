@@ -53,7 +53,7 @@ namespace
 }
 
 
-CATCH_TEST_CASE( "AdvGetOptUnitTests::invalid_parameters", "parameters" )
+CATCH_TEST_CASE( "AdvGetOptUnitTests::invalid_parameters", "AdvGetOptUnitTests" )
 {
     printf("\nAdvanced GetOpt Output:\n");
     // default arguments
@@ -1523,7 +1523,7 @@ CATCH_TEST_CASE( "AdvGetOptUnitTests::invalid_parameters", "parameters" )
 
 
 
-CATCH_TEST_CASE( "AdvGetOptUnitTests::valid_config_files", "config_files" )
+CATCH_TEST_CASE( "AdvGetOptUnitTests::valid_config_files", "AdvGetOptUnitTests" )
 {
     // default arguments
     const char *cargv[] =

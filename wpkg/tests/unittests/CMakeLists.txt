@@ -68,15 +68,15 @@ if( CATCH_FOUND )
     add_executable( ${PROJECT_NAME}
         unittest_main.cpp
         unittest_advgetopt.cpp
-        #unittest_architecture.cpp
-        #unittest_control.cpp
-        #unittest_expr.cpp
-        #unittest_libutf8.cpp
-        #unittest_memfile.cpp
-        #unittest_package.cpp
-        #unittest_system.cpp
-        #unittest_uri_filename.cpp
-        #unittest_version.cpp
+        unittest_architecture.cpp
+        unittest_control.cpp
+        unittest_expr.cpp
+        unittest_libutf8.cpp
+        unittest_memfile.cpp
+        unittest_package.cpp
+        unittest_system.cpp
+        unittest_uri_filename.cpp
+        unittest_version.cpp
         ../../tools/license.cpp
     )
 
