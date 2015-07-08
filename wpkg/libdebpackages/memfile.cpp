@@ -389,9 +389,10 @@ wpkg_filename::uri_filename memory_file::block_manager::buffer_t::get_swap_file_
 }
 
 #if defined(MO_LINUX)
-#   include "sys/types.h"
-#   include "sys/sysinfo.h"
+#   include <sys/types.h>
+#   include <sys/sysinfo.h>
 #elif defined(MO_WINDOWS)
+#   include <windows.h>
 #else
 #   error "Unknown architecture!"
 #endif
@@ -407,7 +408,9 @@ namespace
         virtual long double get_process_percent_used()    const = 0;
     };
 
-#ifdef MO_LINUX
+    typedef std::shared_ptr<SystemMemory> sysmem_t;
+
+#if defined(MO_LINUX)
     class LinuxSystemMemory : public SystemMemory
     {
     public:
@@ -456,8 +459,84 @@ namespace
             return static_cast<uint64_t>(i);
         }
     };
+#elif defined(MO_WINDOWS)
+    class WinSystemMemory : public SystemMemory
+    {
+    public:
+        WinSystemMemory()
+        {
+            MEMORYSTATUSEX memInfo;
+            memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+            ::GlobalMemoryStatusEx( &memInfo );
+            //
+            f_total_virtual_memory    = memInfo.ullTotalPageFile;
+            f_total_physical_memory   = memInfo.ullTotalPhys;
+            
+            PROCESS_MEMORY_COUNTERS_EX pmc;
+            ::GetProcessMemoryInfo( ::GetCurrentProcess(), &pmc, sizeof(pmc) );
+            //
+            f_process_physical_memory = pmc.WorkingSetSize;
+        }
+
+        virtual uint64_t get_total_virtual_memory()    const { return f_total_virtual_memory;    }
+        virtual uint64_t get_total_physical_memory()   const { return f_total_physical_memory;   }
+        virtual uint64_t get_process_physical_memory() const { return f_process_physical_memory; }
+
+        virtual long double get_process_percent_used() const
+        {
+            return (static_cast<long double>(f_process_physical_memory) / static_cast<long double>(f_total_physical_memory)) * 100.0;
+        }
+
+    private:
+        uint64_t    f_total_virtual_memory;
+        uint64_t    f_total_physical_memory;
+        uint64_t    f_process_physical_memory;
+    };
 #else
+    #error "Unknown arch!"
 #endif
+
+    sysmem_t    GetSystemMemory()
+    {
+        sysmem_t sysmem;
+#if defined(MO_LINUX)
+        sysmem.reset( new LinuxSystemMemory );
+#elif defined(MO_WINDOWS)
+        sysmem.reset( new WinSystemMemory );
+#endif
+        return sysmem;
+    }
+
+    void OutputMemStats()
+    {
+#if 1
+        sysmem_t sysmem( GetSystemMemory() );
+
+        std::cout
+            << "Total Virtal Mem=["   << sysmem->get_total_virtual_memory()    << "], "
+            << "Total Physical Mem=[" << sysmem->get_total_physical_memory()   << "], "
+            << "process_size=["       << sysmem->get_process_physical_memory() << "], "
+            << "percent used=["       << sysmem->get_process_percent_used()    << "%]."
+            << std::endl;
+#endif
+    }
+
+    bool IsOverMemThreshold( const int level )
+    {
+        sysmem_t sysmem( GetSystemMemory() );
+
+#if 0
+        std::cout
+            << "Total Virtal Mem=["   << sysmem->get_total_virtual_memory()    << "], "
+            << "Total Physical Mem=[" << sysmem->get_total_physical_memory()   << "], "
+            << "process_size=["       << sysmem->get_process_physical_memory() << "], "
+            << "percent used=["       << sysmem->get_process_percent_used()    << "%],"
+            << "level=[" << level << "%]."
+            << std::endl;
+#endif
+
+        return sysmem->get_process_percent_used() > static_cast<long double>(level);
+    }
 }
 // namespace
 
@@ -471,6 +550,7 @@ bool memory_file::block_manager::buffer_t::swap_out_if_stale( const uint32_t cur
 
     if( cur_time - f_mod_time > BLOCK_MANAGER_BUFFER_TIMEOUT )
     {
+#if 1
         std::cout << "swapping out "
                   << std::hex << this
                   << " time=" << std::dec
@@ -478,6 +558,7 @@ bool memory_file::block_manager::buffer_t::swap_out_if_stale( const uint32_t cur
                   << ", f_mod_time - cur_time=" << cur_time - f_mod_time
                   << ", cur_time=" << cur_time
                   << std::endl;
+#endif
         swap_to_file();
         return true;
     }
@@ -488,6 +569,12 @@ bool memory_file::block_manager::buffer_t::swap_out_if_stale( const uint32_t cur
 
 void memory_file::block_manager::swap_out_stale_buffers() const
 {
+    if( !IsOverMemThreshold( BLOCK_MANAGER_MIN_MEMORY ) )
+    {
+        // Keep in RAM if under 10%
+        return;
+    }
+
     bool swapped_out_buffers = false;
     const uint32_t cur_time( time(NULL) );
     std::for_each( f_buffers.begin(), f_buffers.end(), [&swapped_out_buffers,&cur_time]( buffer_ptr_t buf )
@@ -498,23 +585,12 @@ void memory_file::block_manager::swap_out_stale_buffers() const
         }
     });
 
-#if defined(MO_LINUX)
-    LinuxSystemMemory  sysmem;
-#elif defined(MO_WINDOWS)
-    WinSystemMemory  sysmem;
-#endif
-
     if( swapped_out_buffers )
     {
-        std::cout
-            << "Total Virtal Mem=["   << sysmem.get_total_virtual_memory()    << "], "
-            << "Total Physical Mem=[" << sysmem.get_total_physical_memory()   << "], "
-            << "process_size=["       << sysmem.get_process_physical_memory() << "], "
-            << "percent used=["       << sysmem.get_process_percent_used()    << "%]."
-            << std::endl;
+        OutputMemStats();
     }
 
-    if( sysmem.get_process_percent_used() > static_cast<long double>(BLOCK_MANAGER_MAX_MEMORY) )
+    if( IsOverMemThreshold( BLOCK_MANAGER_MAX_MEMORY ) )
     {
         std::stringstream ss;
         ss << "Process memory over " << BLOCK_MANAGER_MAX_MEMORY << "%! Aborting...";

@@ -239,6 +239,7 @@ public:
         static const int BLOCK_MANAGER_BUFFER_BITS    = 16; // 16 bits represents buffers of 64Kb
         static const int BLOCK_MANAGER_BUFFER_SIZE    = (1 << BLOCK_MANAGER_BUFFER_BITS);
         static const int BLOCK_MANAGER_BUFFER_TIMEOUT = 1;  // seconds
+        static const int BLOCK_MANAGER_MIN_MEMORY     = 10; // percent
         static const int BLOCK_MANAGER_MAX_MEMORY     = 50; // percent
 
         block_manager();
