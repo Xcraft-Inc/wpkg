@@ -458,28 +458,18 @@ namespace
     };
 #else
 #endif
-
-    void OutputMemoryStats()
-    {
-#if defined(MO_LINUX)
-        LinuxSystemMemory  sysmem;
-#elif defined(MO_WINDOWS)
-        WinSystemMemory  sysmem;
-#endif
-        std::cout
-                << "Total Virtal Mem=["   << sysmem.get_total_virtual_memory()    << "], "
-                << "Total Physical Mem=[" << sysmem.get_total_physical_memory()   << "], "
-                << "process_size=["       << sysmem.get_process_physical_memory() << "], "
-                << "percent used=["       << sysmem.get_process_percent_used()    << "%]."
-                << std::endl;
-    }
 }
 // namespace
 
 
-void memory_file::block_manager::buffer_t::swap_out_if_stale( const uint32_t cur_time )
+bool memory_file::block_manager::buffer_t::swap_out_if_stale( const uint32_t cur_time )
 {
-    if( !is_swapped() && (cur_time - f_mod_time > BLOCK_MANAGER_BUFFER_TIMEOUT) )
+    if( is_swapped() )
+    {
+        return false;
+    }
+
+    if( cur_time - f_mod_time > BLOCK_MANAGER_BUFFER_TIMEOUT )
     {
         std::cout << "swapping out "
                   << std::hex << this
@@ -488,19 +478,49 @@ void memory_file::block_manager::buffer_t::swap_out_if_stale( const uint32_t cur
                   << ", f_mod_time - cur_time=" << cur_time - f_mod_time
                   << ", cur_time=" << cur_time
                   << std::endl;
-        OutputMemoryStats();
         swap_to_file();
+        return true;
     }
+
+    return false;
 }
 
 
 void memory_file::block_manager::swap_out_stale_buffers() const
 {
+    bool swapped_out_buffers = false;
     const uint32_t cur_time( time(NULL) );
-    std::for_each( f_buffers.begin(), f_buffers.end(), [&cur_time]( buffer_ptr_t buf )
+    std::for_each( f_buffers.begin(), f_buffers.end(), [&swapped_out_buffers,&cur_time]( buffer_ptr_t buf )
     {
-        buf->swap_out_if_stale( cur_time );
+        if( buf->swap_out_if_stale( cur_time ) )
+        {
+            swapped_out_buffers = true;
+        }
     });
+
+#if defined(MO_LINUX)
+    LinuxSystemMemory  sysmem;
+#elif defined(MO_WINDOWS)
+    WinSystemMemory  sysmem;
+#endif
+
+    if( swapped_out_buffers )
+    {
+        std::cout
+            << "Total Virtal Mem=["   << sysmem.get_total_virtual_memory()    << "], "
+            << "Total Physical Mem=[" << sysmem.get_total_physical_memory()   << "], "
+            << "process_size=["       << sysmem.get_process_physical_memory() << "], "
+            << "percent used=["       << sysmem.get_process_percent_used()    << "%]."
+            << std::endl;
+    }
+
+    if( sysmem.get_process_percent_used() > static_cast<long double>(BLOCK_MANAGER_MAX_MEMORY) )
+    {
+        std::stringstream ss;
+        ss << "Process memory over " << BLOCK_MANAGER_MAX_MEMORY << "%! Aborting...";
+        std::cerr << ss.str() << std::endl;
+        throw memfile_exception_io( ss.str() );
+    }
 }
 
 

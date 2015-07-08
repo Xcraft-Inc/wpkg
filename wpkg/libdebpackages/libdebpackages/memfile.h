@@ -238,7 +238,8 @@ public:
         // properly work with all the possible optimizations (i.e. 10 bits)
         static const int BLOCK_MANAGER_BUFFER_BITS    = 16; // 16 bits represents buffers of 64Kb
         static const int BLOCK_MANAGER_BUFFER_SIZE    = (1 << BLOCK_MANAGER_BUFFER_BITS);
-        static const int BLOCK_MANAGER_BUFFER_TIMEOUT = 1; // seconds
+        static const int BLOCK_MANAGER_BUFFER_TIMEOUT = 1;  // seconds
+        static const int BLOCK_MANAGER_MAX_MEMORY     = 50; // percent
 
         block_manager();
         ~block_manager();
@@ -267,7 +268,7 @@ public:
             bool is_swapped() const;
             wpkg_filename::uri_filename get_swap_file_name() const;
 
-            void swap_out_if_stale( const uint32_t cur_time );
+            bool swap_out_if_stale( const uint32_t cur_time );
 
         private:
             typedef std::shared_ptr<wpkg_filename::temporary_uri_filename> filename_t;
