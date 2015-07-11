@@ -47,7 +47,7 @@ if( MSVC )
     set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4251" )
 endif()
 if( MSVC OR MO_MINGW32 OR MO_MINGW64 OR MSYS )
-    set ( EXTRA_LIBRARIES wsock32 ws2_32 mpr ole32 uuid )
+    set( EXTRA_LIBRARIES psapi.lib wsock32 ws2_32 mpr ole32 uuid )
 endif()
 
 file( GLOB LIBDEBPACKAGES_INCLUDE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/libdebpackages/*.h" )

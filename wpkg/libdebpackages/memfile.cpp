@@ -71,7 +71,6 @@
 #   include    "libdebpackages/comptr.h"
 #   include    <objidl.h>
 #   include    <shlobj.h>
-#   include    <process.h>
 // "conditional expression is constant"
 #   pragma warning(disable: 4127)
 // "unreachable code"
@@ -393,6 +392,7 @@ wpkg_filename::uri_filename memory_file::block_manager::buffer_t::get_swap_file_
 #   include <sys/sysinfo.h>
 #elif defined(MO_WINDOWS)
 #   include <windows.h>
+#   include <Psapi.h>
 #else
 #   error "Unknown architecture!"
 #endif
@@ -467,13 +467,13 @@ namespace
         {
             MEMORYSTATUSEX memInfo;
             memInfo.dwLength = sizeof(MEMORYSTATUSEX);
-            ::GlobalMemoryStatusEx( &memInfo );
+            GlobalMemoryStatusEx( &memInfo );
             //
             f_total_virtual_memory    = memInfo.ullTotalPageFile;
             f_total_physical_memory   = memInfo.ullTotalPhys;
             
-            PROCESS_MEMORY_COUNTERS_EX pmc;
-            ::GetProcessMemoryInfo( ::GetCurrentProcess(), &pmc, sizeof(pmc) );
+            PROCESS_MEMORY_COUNTERS pmc;
+            GetProcessMemoryInfo( GetCurrentProcess(), &pmc, sizeof(pmc) );
             //
             f_process_physical_memory = pmc.WorkingSetSize;
         }
@@ -541,7 +541,7 @@ namespace
 // namespace
 
 
-bool memory_file::block_manager::buffer_t::swap_out_if_stale( const uint32_t cur_time )
+bool memory_file::block_manager::buffer_t::swap_out_if_stale( const uint64_t cur_time )
 {
     if( is_swapped() )
     {
@@ -576,7 +576,7 @@ void memory_file::block_manager::swap_out_stale_buffers() const
     }
 
     bool swapped_out_buffers = false;
-    const uint32_t cur_time( time(NULL) );
+    const uint64_t cur_time( time(NULL) );
     std::for_each( f_buffers.begin(), f_buffers.end(), [&swapped_out_buffers,&cur_time]( buffer_ptr_t buf )
     {
         if( buf->swap_out_if_stale( cur_time ) )

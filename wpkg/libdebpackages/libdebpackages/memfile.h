@@ -269,13 +269,13 @@ public:
             bool is_swapped() const;
             wpkg_filename::uri_filename get_swap_file_name() const;
 
-            bool swap_out_if_stale( const uint32_t cur_time );
+            bool swap_out_if_stale( const uint64_t cur_time );
 
         private:
             typedef std::shared_ptr<wpkg_filename::temporary_uri_filename> filename_t;
             mutable filename_t          f_swap_file_name;
             mutable std::vector<char>   f_buffer;
-            mutable uint32_t            f_mod_time;
+            mutable uint64_t            f_mod_time;
 
             // No copy construction
             buffer_t( const buffer_t& );
