@@ -40,14 +40,14 @@
 #pragma once
 #endif
 #endif
-#define CONTROLLED_VARS_MAJOR 1
-#define CONTROLLED_VARS_MINOR 3
-#define CONTROLLED_VARS_PATCH 4
+#define CONTROLLED_VARS_MAJOR @CONTROLLED_VARS_MAJOR@
+#define CONTROLLED_VARS_MINOR @CONTROLLED_VARS_MINOR@
+#define CONTROLLED_VARS_PATCH @CONTROLLED_VARS_PATCH@
 namespace controlled_vars {
-inline int controlled_vars_major() { return 1; }
-inline int controlled_vars_minor() { return 3; }
-inline int controlled_vars_patch() { return 4; }
-inline const char *controlled_vars_version() { return "1.3.4"; }
+inline int controlled_vars_major() { return @CONTROLLED_VARS_MAJOR@; }
+inline int controlled_vars_minor() { return @CONTROLLED_VARS_MINOR@; }
+inline int controlled_vars_patch() { return @CONTROLLED_VARS_PATCH@; }
+inline const char *controlled_vars_version() { return "@CONTROLLED_VARS_MAJOR@.@CONTROLLED_VARS_MINOR@.@CONTROLLED_VARS_PATCH@"; }
 }
 #endif
 // #ifndef CONTROLLED_VARS_VERSION_H

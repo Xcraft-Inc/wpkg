@@ -3,13 +3,13 @@
 #      CMakeLists.txt
 #
 # Description:
-#      Definitions to create wpkg packages from the binary
+#      Definitions to create the build environment with cmake
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2013 Made to Order Software Corp.
+#      Copyright (c) 2006-2013 Made to Order Software Corp.
 #
 #      https://sourceforge.net/projects/unigw/
 #      contact@m2osw.com
@@ -34,44 +34,97 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-## This project builds the pkg-explorer package based on component.
+## This project builds the wpkg packages based on component.
 
-set( DEBVERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${VERSION_DEVEL}" )
-set( WPKG_ROOT "${CMAKE_BINARY_DIR}/WPKG" )
-set( PACKAGE_FOLDER package )
-if( UNIX )
-    set( INSTALL_PREFIX "/usr" )
-else()
-    set( INSTALL_PREFIX "" )
+set( LOCAL_WPKG_ROOT "${CMAKE_BINARY_DIR}/WPKG" )
+
+if( NOT EXISTS "${WPKG_ROOT}" )
+    message( FATAL_ERROR "WPKG_ROOT=${WPKG_ROOT} not found!" )
 endif()
-set( COMPONENT "runtime" )
-configure_file( control.${COMPONENT}.in "${WPKG_ROOT}/${COMPONENT}/WPKG/control" @ONLY )
-add_custom_target( ${COMPONENT}_install
-        COMMAND ${CMAKE_COMMAND}
-                    -DCMAKE_INSTALL_PREFIX="${WPKG_ROOT}/${COMPONENT}${INSTALL_PREFIX}"
-                    -DCMAKE_INSTALL_COMPONENT=${COMPONENT}
-                    -DCMAKE_INSTALL_DO_STRIP=1
-                    -DBUILD_TYPE=$(Configuration)
-                    -P ${CMAKE_BINARY_DIR}/cmake_install.cmake
-        #COMMAND ${CMAKE_COMMAND}
-        #            -DCMAKE_INSTALL_PREFIX="${WPKG_ROOT}/${COMPONENT}${INSTALL_PREFIX}"
-        #            -DCMAKE_INSTALL_COMPONENT=package
-        #            -DBUILD_TYPE=$(Configuration)
-        #            -P ${CMAKE_BINARY_DIR}/cmake_install.cmake
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        DEPENDS package_prereqs
-    )
-add_custom_target( ${COMPONENT}
-        COMMAND ${WPKG}
-            --output-dir "${WPKG_ROOT}/packages"
-            --build      "${WPKG_ROOT}/${COMPONENT}"
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        DEPENDS ${COMPONENT}_install
-        )
-set_property( TARGET ${COMPONENT}_install PROPERTY FOLDER ${PACKAGE_FOLDER} )
-set_property( TARGET ${COMPONENT} PROPERTY FOLDER ${PACKAGE_FOLDER} )
 
-add_custom_target( package DEPENDS runtime )
+if( MO_WINDOWS )
+    unset( QT4_DLL_LIST_RELEASE )
+    foreach( qt_lib ${QT4_REQ_LIBS} )
+        list( APPEND QT4_DLL_LIST_RELEASE ${QT_BINARY_DIR}/${qt_lib}4.dll  )
+    endforeach()
+
+    if( MO_MINGW32 )
+        list( APPEND QT4_DLL_LIST_RELEASE ${QT_BINARY_DIR}/mingwm10.dll  )
+    endif()
+
+    install(
+        FILES
+            ${QT4_DLL_LIST_RELEASE}
+        DESTINATION
+            bin
+        COMPONENT
+            qt4
+       )
+endif()
+
+
+if( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+    message( STATUS "Not building debug packages" )
+    return()
+endif()
+
+set( SUBPACKAGES "runtime*, documentation" )
+set( COMPONENT_LIST runtime documentation )
+set( INSTALL_PACKAGES wpkg-gui wpkggui-doc )
+set( PLATFORM_DEPENDS "Depends/runtime: wpkg (>= 0.9.0), wpkggui-doc (>= ${VERSION})" )
+if( MO_WINDOWS )
+    set( PLATFORM_DEPENDS "${PLATFORM_DEPENDS}, wpkgguiqt4 (>= ${VERSION})" )
+    set( SUBPACKAGES "${SUBPACKAGES}, qt4" )
+    list( APPEND INSTALL_PACKAGES wpkgguiqt4 )
+    list( APPEND COMPONENT_LIST qt4 )
+endif()
+
+configure_file( control.info.in "${LOCAL_WPKG_ROOT}/control.info" @ONLY )
+
+unset( COMP_TARGETS )
+foreach( _comp ${COMPONENT_LIST} )
+    add_custom_target( ${_comp}_install
+            COMMAND ${CMAKE_COMMAND}
+                        -DCMAKE_INSTALL_PREFIX="${LOCAL_WPKG_ROOT}/${_comp}${INSTALL_PREFIX}"
+                        -DCMAKE_INSTALL_COMPONENT=${_comp}
+                        #-DCMAKE_INSTALL_DO_STRIP=1
+                        -DBUILD_TYPE=$(Configuration)
+                        -P ${CMAKE_BINARY_DIR}/cmake_install.cmake
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            DEPENDS package_prereqs
+        )
+    list( APPEND COMP_TARGETS ${_comp}_install )
+    if( MSVC )
+        set_property( TARGET ${_comp}_install PROPERTY FOLDER ${PACKAGE_FOLDER} )
+        set_property( TARGET ${_comp}_install PROPERTY FOLDER ${PACKAGE_FOLDER} )
+    endif()
+endforeach()
+
+add_custom_target( package
+        COMMAND ${WPKG}
+            --verbose
+            --compressor gzip
+            --output-dir "${WPKG_ROOT}/packages"
+            --build      "${LOCAL_WPKG_ROOT}/control.info" "${LOCAL_WPKG_ROOT}"
+        COMMAND ${WPKG}
+            --verbose
+            --create-index "${WPKG_ROOT}/packages/index.tar.gz"
+            --repository "${WPKG_ROOT}/packages"
+        COMMAND ${WPKG}
+            --verbose
+            --root    "${WPKG_ROOT}"
+            --update
+        COMMAND ${WPKG}
+            --verbose
+            --root    "${WPKG_ROOT}"
+            --force-reinstall
+            --install ${INSTALL_PACKAGES}
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        DEPENDS
+            ${COMP_TARGETS}
+            "${WPKG_SOURCES_FILE}"
+    )
+
 set_property( TARGET package PROPERTY FOLDER ${PACKAGE_FOLDER} )
 
 # vim: ts=4 sw=4 et

@@ -38,22 +38,23 @@ elseif( MO_DARWIN )
 endif()
 
 include_directories( ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR} ${DEBPACKAGES_INCLUDE} )
+link_directories( ${DIST_ROOT}/lib )
 
 set( DEBUG_LIBRARIES
-	debug ${DEBPACKAGES_D_LIBRARY}
-	debug ${EXPR_D_LIBRARY}
-	debug ${TLD_D_LIBRARY}
-	debug ${ZLIB_D_LIBRARY}
-	debug ${BZ2_D_LIBRARY}
-	debug ${UTF8_D_LIBRARY}
+	debug debpackages_d
+	debug expr_d
+	debug utf8_d
+	debug wpkg_bz2_d
+	debug wpkg_tld_d
+	debug wpkg_z_d
 	)
 set( RELEASE_LIBRARIES
-	optimized ${DEBPACKAGES_LIBRARY}
-	optimized ${EXPR_LIBRARY}
-	optimized ${TLD_LIBRARY}
-	optimized ${ZLIB_LIBRARY}
-	optimized ${BZ2_LIBRARY}
-	optimized ${UTF8_LIBRARY}
+	optimized debpackages
+	optimized expr
+	optimized utf8
+	optimized wpkg_bz2
+	optimized wpkg_tld
+	optimized wpkg_z
 	)
 
 if( CMAKE_BUILD_TYPE )
@@ -179,7 +180,7 @@ if( NOT MO_DARWIN )
 	install( FILES ${CMAKE_CURRENT_SOURCE_DIR}/icons/logo.png
 		DESTINATION share/icons/
 		RENAME pkg-explorer.png
-		COMPONENT runtime
+		COMPONENT documentation
 		)
 endif()
 
@@ -191,7 +192,7 @@ if( MO_LINUX )
 		)
 	install( FILES ${PROJECT_BINARY_DIR}/pkg-explorer.desktop
 		DESTINATION share/applications
-		COMPONENT runtime
+		COMPONENT documentation
 		)
 endif()
 
@@ -252,7 +253,7 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES
 
 install( TARGETS ${PROJECT_NAME}
 		RUNTIME DESTINATION bin
-		COMPONENT runtime
+        COMPONENT runtime
 		)
 
 

@@ -30,9 +30,10 @@ option( BUILD_WPKG "Build the wpkg package" ON )
 #
 set( VERSION_MAJOR 0 )
 set( VERSION_MINOR 3 )
-set( VERSION_PATCH 3 )
+set( VERSION_PATCH 4 )
 set( VERSION_DEVEL 0 )
 
+set( VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${VERSION_DEVEL}" )
 
 #===============================================================================
 # Set up system
@@ -53,27 +54,20 @@ endif()
 #===============================================================================
 # Detect system paticulars
 #
+# TODO: This code needs to be placed in a stand-alone cmake library/module.
+#
 add_definitions( -DCMAKE_SYSTEM_NAME=\"${CMAKE_SYSTEM_NAME}\" )
 if( UNIX )
 	if( ${CMAKE_SYSTEM_NAME} MATCHES Linux )
-		set( CANONALIZED_PREFIX linux )
 		add_definitions( -DMO_LINUX )
 		set( MO_LINUX TRUE )
 	elseif( ${CMAKE_SYSTEM_NAME} MATCHES Darwin )
-		set( CANONALIZED_PREFIX darwin )
 		add_definitions( -DMO_DARWIN )
 		set( MO_DARWIN TRUE )
 	else()
 		message( FATAL_ERROR "Unix-like platform '${CMAKE_SYSTEM_NAME}' not supported!" )
 	endif()
 	execute_process( COMMAND uname -m OUTPUT_VARIABLE ARCH OUTPUT_STRIP_TRAILING_WHITESPACE )
-	if( (${ARCH} MATCHES i686) OR (${ARCH} MATCHES i386) )
-		set( CANONALIZED_SUFFIX i386 )
-	else( ${ARCH} MATCHES x86_64 )
-		set( CANONALIZED_SUFFIX amd64 )
-	else()
-		message( FATAL_ERROR "Unknown architecture '${ARCH}'!" )
-    endif()
     #
     # Feel free to comment out this line if you don't like the warnings
     # HOWEVER: do not submit code to us if it generates warnings!
@@ -86,26 +80,21 @@ elseif( MSVC )
 		"${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS /EHsc /Zc:wchar_t"
 	)
 	if( CMAKE_CL_64 )
-		set( CANONALIZED_SUFFIX amd64 )
 		set( WIN_MACHINE_FLAGS "/MACHINE:X64" )
 	else()
-		set( CANONALIZED_SUFFIX i386 )
 		set( WIN_MACHINE_FLAGS "/MACHINE:X86" )
 	endif()
-	set( CANONALIZED_PREFIX win32 )
 	add_definitions( -DMO_WINDOWS -DMO_MSVC -DNOMINMAX )
 	set( MO_WINDOWS TRUE )
-elseif( NOT BORLAND AND NOT CYGWIN )
-	set( CANONALIZED_SUFFIX i386 )
-	set( CANONALIZED_PREFIX mingw32 )
-	add_definitions( -DMO_WINDOWS -DMO_MINGW32 )
+elseif( MINGW )
+    set( WIN_MACHINE_FLAGS "-fPIC" )
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x" )
+    add_definitions( -DMO_WINDOWS -DMO_MINGW32 )
 	set( MO_WINDOWS TRUE )
 	set( MO_MINGW32 TRUE )
 else()
 	message( FATAL_ERROR "Platform not supported!" )
 endif()
-set( CANONALIZED_ARCH "${CANONALIZED_PREFIX}-${CANONALIZED_SUFFIX}" )
-add_definitions( -DCANONALIZED_ARCH=\"${CANONALIZED_ARCH}\" )
 
 #===============================================================================
 # Find dependencies
@@ -125,25 +114,22 @@ include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 set( CMAKE_AUTOMOC TRUE )
 
-set( DIST_PATH "$ENV{DIST_PATH}" CACHE PATH "Distribution path to find dependencies from WPKG." ) 
+set( ENV_ROOT_PATH "$ENV{WPKG_ROOT}" )
+if( NOT ENV_ROOT_PATH )
+    set( ENV_ROOT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../dist" )
+endif()
+set( WPKG_ROOT "${ENV_ROOT_PATH}" CACHE PATH "Root of wpkg installation." )
 
-find_library( DEBPACKAGES_LIBRARY   debpackages   PATH "${DIST_PATH}/lib" )
-find_library( EXPR_LIBRARY          expr          PATH "${DIST_PATH}/lib" )
-find_library( UTF8_LIBRARY          utf8          PATH "${DIST_PATH}/lib" )
-find_library( BZ2_LIBRARY           wpkg_bz2      PATH "${DIST_PATH}/lib" )
-find_library( TLD_LIBRARY           wpkg_tld      PATH "${DIST_PATH}/lib" )
-find_library( ZLIB_LIBRARY          wpkg_z        PATH "${DIST_PATH}/lib" )
-#
-find_library( DEBPACKAGES_D_LIBRARY debpackages_d PATH "${DIST_PATH}/lib" )
-find_library( EXPR_D_LIBRARY        expr_d        PATH "${DIST_PATH}/lib" )
-find_library( UTF8_D_LIBRARY        utf8_d        PATH "${DIST_PATH}/lib" )
-find_library( BZ2_D_LIBRARY         wpkg_bz2_d    PATH "${DIST_PATH}/lib" )
-find_library( TLD_D_LIBRARY         wpkg_tld_d    PATH "${DIST_PATH}/lib" )
-find_library( ZLIB_D_LIBRARY        wpkg_z_d      PATH "${DIST_PATH}/lib" )
-#
-find_program( WPKG                  wpkg          PATH "${DIST_PATH}/bin" )
-#
-find_file( WPKGAR_H_INCLUDE wpkgar.h PATHS ${DIST_PATH}/include/wpkg/libdebpackages /usr/include/wpkg/libdebpackages /usr/local/include/wpkg/libdebpackages )
+if( UNIX )
+    set( INSTALL_PREFIX "/usr" )
+else()
+    set( INSTALL_PREFIX "" )
+endif()
+set( DIST_ROOT "${WPKG_ROOT}${INSTALL_PREFIX}" )
+
+find_program( WPKG wpkg_static PATH "${DIST_ROOT}/bin" )
+
+find_file( WPKGAR_H_INCLUDE wpkgar.h PATHS ${DIST_ROOT}/include/wpkg/libdebpackages /usr/include/wpkg/libdebpackages /usr/local/include/wpkg/libdebpackages )
 if( NOT WPKGAR_H_INCLUDE )
 	message( FATAL_ERROR "You must specify the location of the wpkgar.h file!" )
 endif()
@@ -152,70 +138,8 @@ get_filename_component( DEBPACKAGES_DIR  ${WPKGAR_H_INCLUDE}  PATH )
 get_filename_component( DEBPACKAGES_IDIR ${DEBPACKAGES_DIR} PATH )
 set( DEBPACKAGES_INCLUDE "${DEBPACKAGES_DIR}" "${DEBPACKAGES_IDIR}" )
 
-function( CopyBinaries Release_DLL Debug_DLL )
-	if( DEFINED CMAKE_BUILD_TYPE )
-		#
-		# Nmake build
-		#
-		file( INSTALL "${${CMAKE_BUILD_TYPE}_DLL}"
-			DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-			)
-	else()
-		#
-		# Visual Studio appends the Debug/Release folder to the output name
-		#
-		file( INSTALL "${Release_DLL}"
-			DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release"
-			)
-		file( INSTALL "${Debug_DLL}"
-			DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug"
-			)
-	endif()
-endfunction()
-#
-function( InstallBinaries Release_DLL Debug_DLL Component )
-	install(
-		FILES "${Release_DLL}"
-		DESTINATION bin
-		CONFIGURATIONS Release
-        COMPONENT ${Component}
-		)
-	install(
-		FILES "${Debug_DLL}"
-		DESTINATION bin
-		CONFIGURATIONS Debug
-        COMPONENT ${Component}
-		)
-endfunction()
-
 if( MO_WINDOWS )
 	set( EXTRA_LIBRARIES wsock32 ws2_32 mpr )
-	##
-	## Copy DLLs for debugging purposes
-	##
-	foreach( _lib ${QT4_REQ_LIBS} )
-		set( Release_DLL "${QT_BINARY_DIR}/${_lib}4.dll"  )
-		set( Debug_DLL   "${QT_BINARY_DIR}/${_lib}d4.dll" )
-		CopyBinaries( ${Release_DLL} ${Debug_DLL} )
-        InstallBinaries( ${Release_DLL} ${Debug_DLL} "runtime" )
-	endforeach()
-
-	if( BUILD_WPKG )
-		set( DEBPACKAGES_LIBS
-			debpackages
-			expr
-			utf8
-			wpkg_bz2
-			wpkg_tld
-			wpkg_z
-			)
-		foreach( _lib ${DEBPACKAGES_LIBS} )
-			set( Release_DLL "${DIST_PATH}/bin/${_lib}.dll"   )
-			set( Debug_DLL   "${DIST_PATH}/bin/${_lib}_d.dll" )
-			CopyBinaries( ${Release_DLL} ${Debug_DLL} "runtime" )
-			InstallBinaries( ${Release_DLL} ${Debug_DLL} "runtime" )
-		endforeach()
-	endif()
 endif()
 
 
@@ -237,7 +161,7 @@ if( MO_DARWIN )
 			${CMAKE_SOURCE_DIR}/documentation/copyright
 			${CMAKE_SOURCE_DIR}/documentation/index.html
 		DESTINATION .
-		COMPONENT runtime
+		COMPONENT documentation
 		)
 else()
 	set( CHANGELOG_OUTPUT ${PROJECT_BINARY_DIR}/changelog.Debian.gz )
@@ -256,11 +180,11 @@ else()
 			${CMAKE_SOURCE_DIR}/documentation/index.html
 			${CHANGELOG_OUTPUT}
 		DESTINATION share/doc/pkg-explorer
-		COMPONENT runtime
+		COMPONENT documentation
 		)
 endif()
 
-add_custom_target( package_prereqs DEPENDS changelog_generation pkg-explorer )
+add_custom_target( package_prereqs DEPENDS changelog_generation pkg-explorer pkg-installer )
 set_property( TARGET package_prereqs PROPERTY FOLDER package )
 add_subdirectory( package )
 

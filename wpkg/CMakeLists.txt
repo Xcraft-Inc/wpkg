@@ -39,7 +39,7 @@
 ##
 set(WPKG_VERSION_MAJOR 0)
 set(WPKG_VERSION_MINOR 9)
-set(WPKG_VERSION_PATCH 10)
+set(WPKG_VERSION_PATCH 11)
 
 cmake_minimum_required(VERSION 2.8.4)
 
@@ -133,7 +133,7 @@ elseif( MSVC )
     set( MO_WINDOWS TRUE )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS" )
     set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS" )
-elseif( MINGW32 OR MSYS )
+elseif( MINGW )
     set( WPKG_PROCESSOR i386 )
     set( WPKG_OS mswindows )
     # WIN_MACHINE_FLAGS cannot be empty and since cmake adds -fPIC under
@@ -143,21 +143,16 @@ elseif( MINGW32 OR MSYS )
     add_definitions( -DMO_WINDOWS -DMO_MINGW32 -DCONNECT_COMMANDLINE=2048 )
     set( MO_WINDOWS TRUE )
     set( MO_MINGW32 TRUE )
-elseif( MINGW )
-    set( WPKG_PROCESSOR amd64 )
-    set( WPKG_OS mswindows )
-    # WIN_MACHINE_FLAGS cannot be empty and since cmake adds -fPIC under
-    # our feet, that makes no difference at this point...
-    set( WIN_MACHINE_FLAGS "-fPIC" )
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x" )
-    add_definitions( -DMO_WINDOWS -DMO_MINGW64 -DCONNECT_COMMANDLINE=2048 )
-    set( MO_WINDOWS TRUE )
-    set( MO_MINGW64 TRUE )
 else()
     message( FATAL_ERROR "Platform not supported!" )
 endif()
 set( WPKG_ARCHITECTURE "${WPKG_OS}-${WPKG_PROCESSOR}" )
-set( WPKG_ROOT "${CMAKE_SOURCE_DIR}/../dist" CACHE PATH "Root of wpkg installation." )
+
+set( ENV_ROOT_PATH "$ENV{WPKG_ROOT}" )
+if( NOT ENV_ROOT_PATH )
+    set( ENV_ROOT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../dist" )
+endif()
+set( WPKG_ROOT "${ENV_ROOT_PATH}" CACHE PATH "Root of wpkg installation." )
 
 if( DEFINED ENV{CONTROLLED_VARS_DEBUG} )
     add_definitions( -DCONTROLLED_VARS_DEBUG )
@@ -202,18 +197,18 @@ add_subdirectory( libutf8            )
 add_subdirectory( libexpr            )
 add_subdirectory( libdebpackages     )
 
-## Make sure we have "_d" for debug binaries
-get_property( LIBRARY_TARGETS GLOBAL PROPERTY ALL_LIBRARY_TARGETS )
-foreach( TGT ${LIBRARY_TARGETS} )
-    set_property( TARGET ${TGT} PROPERTY OUTPUT_NAME_DEBUG ${TGT}_d )
-endforeach()
-
 ## Tools and others
 add_subdirectory( tools )
 if( NOT MO_MINGW32 AND NOT MO_MINGW64 )
     add_subdirectory( tests/unittests )
 endif()
 add_subdirectory( documentation )
+
+## Make sure we have "_d" for debug binaries
+get_property( LIBRARY_TARGETS GLOBAL PROPERTY ALL_LIBRARY_TARGETS )
+foreach( TGT ${LIBRARY_TARGETS} )
+    set_property( TARGET ${TGT} PROPERTY OUTPUT_NAME_DEBUG ${TGT}_d )
+endforeach()
 
 install(
     DIRECTORY "${CMAKE_SOURCE_DIR}/documentation/."
@@ -222,32 +217,6 @@ install(
     PATTERN .svn EXCLUDE
     PATTERN copyright EXCLUDE
 )
-
-# Create a target which generates the changelog gzip file.
-# Note: you specify "wpkg" as the tool since it is also a cmake target. add_custom_command() understands CMake generated targets.
-#
-#if( MO_MINGW32 )
-## running wpkg doesn't work when cross compiling; use file as is for now
-#set( CHANGELOG_OUTPUT_FILE "${PROJECT_SOURCE_DIR}/ChangeLog" )
-#else( MO_MINGW32 )
-#set( CHANGELOG_INPUT_FILE  "${PROJECT_SOURCE_DIR}/ChangeLog"           )
-#set( CHANGELOG_OUTPUT_FILE "${PROJECT_BINARY_DIR}/changelog.Debian.gz" )
-#add_custom_command(
-#    OUTPUT "${CHANGELOG_OUTPUT_FILE}"
-#    COMMAND wpkg -z 9 -Z gzip --force-hold --force-overwrite --compress "${CHANGELOG_INPUT_FILE}" --output-filename "${CHANGELOG_OUTPUT_FILE}"
-#    DEPENDS "${CHANGELOG_INPUT_FILE}"
-#)
-#add_custom_target( changelog ALL DEPENDS "${CHANGELOG_OUTPUT_FILE}" )
-#endif( MO_MINGW32 )
-
-#install(
-#    FILES
-#        #"${CMAKE_SOURCE_DIR}/documentation/copyright"
-#        "${CMAKE_SOURCE_DIR}/AUTHORS"
-#        #"${CHANGELOG_OUTPUT_FILE}"
-#    DESTINATION share/doc/wpkg
-#    COMPONENT runtime
-#)
 
 if( MSVC )
     set( PACKAGE_FOLDER package )

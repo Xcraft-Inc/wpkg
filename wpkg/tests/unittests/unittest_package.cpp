@@ -468,10 +468,10 @@ namespace
             verify_content,
             verify_text
         };
-        typedef controlled_vars::limited_auto_init<verify_modes, verify_deleted, verify_text, verify_exists> verify_mode_t;
+        typedef controlled_vars::limited_auto_enum_init<verify_modes, verify_deleted, verify_text, verify_exists> verify_mode_t;
         void clear()
         {
-            f_mode = static_cast<int>(verify_exists); // FIXME cast
+            f_mode = verify_exists;
             f_filename = "";
             f_data = "";
         }
@@ -2104,20 +2104,20 @@ namespace
             verify_file_vector_t files;
             verify_file_t f;
             f.f_filename = "preinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "pre-inst ctrl_t1\n"
                 "arguments: [install]";
             files.push_back(f);
             f.f_filename = "postinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "post-inst ctrl_t1\n"
                 "arguments: [configure 1.0]";
             files.push_back(f);
             f.f_filename = "prerm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postrm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             verify_generated_files(files);
         }
@@ -2249,28 +2249,28 @@ namespace
             verify_file_vector_t files;
             verify_file_t f;
             f.f_filename = "preinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "preinst-b.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "pre-inst ctrl_t1 (b)\n"
                 "arguments: [upgrade 1.0]";
             files.push_back(f);
             f.f_filename = "postinst-b.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "post-inst ctrl_t1 (b)\n"
                 "arguments: [configure 1.1]";
             files.push_back(f);
             f.f_filename = "prerm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "pre-rm ctrl_t1\n"
                 "arguments: [upgrade 1.1]";
             files.push_back(f);
             f.f_filename = "postrm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "post-rm ctrl_t1\n"
                 "arguments: [upgrade 1.1]";
             files.push_back(f);
@@ -2284,31 +2284,31 @@ namespace
             files.clear();
             f.clear();
             f.f_filename = "preinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "prerm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postrm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "preinst-b.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postinst-b.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
 
             f.f_filename = "prerm-b.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "pre-rm ctrl_t1 (b)\n"
                 "arguments: [remove]";
             files.push_back(f);
             f.f_filename = "postrm-b.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "post-rm ctrl_t1 (b)\n"
                 "arguments: [remove]";
             files.push_back(f);
@@ -2336,16 +2336,16 @@ namespace
             verify_file_vector_t files;
             verify_file_t f;
             f.f_filename = "preinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "prerm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postrm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             verify_generated_files(files);
         }
@@ -2476,26 +2476,26 @@ namespace
             verify_file_vector_t files;
             verify_file_t f;
             f.f_filename = "preinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "preinst-b.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "pre-inst ctrl_t2 (b)\n"
                 "arguments: [upgrade 2.0]";
             files.push_back(f);
             f.f_filename = "postinst-c.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "post-inst ctrl_t2 (c)\n"
                 "arguments: [configure 2.1]";
             files.push_back(f);
             f.f_filename = "prerm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postrm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             verify_generated_files(files);
 
@@ -2507,31 +2507,31 @@ namespace
             files.clear();
             f.clear();
             f.f_filename = "preinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "prerm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postrm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "preinst-b.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postinst-b.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
 
             f.f_filename = "prerm-b.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "pre-rm ctrl_t2 (b)\n"
                 "arguments: [remove]";
             files.push_back(f);
             f.f_filename = "postrm-b.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "post-rm ctrl_t2 (b)\n"
                 "arguments: [remove]";
             files.push_back(f);
@@ -2666,20 +2666,20 @@ namespace
             verify_file_vector_t files;
             verify_file_t f;
             f.f_filename = "preinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "pre-inst ctrl_t3\n"
                 "arguments: [install]";
             files.push_back(f);
             f.f_filename = "postinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_text); // FIXME cast
+            f.f_mode = verify_file_t::verify_text;
             f.f_data = "post-inst ctrl_t3\n"
                 "arguments: [configure 3.0]";
             files.push_back(f);
             f.f_filename = "prerm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postrm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             verify_generated_files(files);
         }
@@ -2701,16 +2701,16 @@ namespace
             verify_file_vector_t files;
             verify_file_t f;
             f.f_filename = "preinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "prerm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postrm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             verify_generated_files(files);
 
@@ -2722,16 +2722,16 @@ namespace
             files.clear();
             f.clear();
             f.f_filename = "preinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postinst.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "prerm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             f.f_filename = "postrm.txt";
-            f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+            f.f_mode = verify_file_t::verify_deleted;
             files.push_back(f);
             verify_generated_files(files);
         }
@@ -3033,7 +3033,7 @@ namespace
         verify_file_vector_t files;
         verify_file_t f;
         f.f_filename = "usr/share/doc/held/changes_in_15";
-        f.f_mode = static_cast<int>(verify_file_t::verify_deleted); // FIXME cast
+        f.f_mode = verify_file_t::verify_deleted;
         files.push_back(f);
         verify_generated_files(files);
 

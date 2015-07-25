@@ -50,6 +50,7 @@ if( CATCH_FOUND )
 	add_definitions( -DCATCH_CONFIG_PREFIX_ALL )
 
     include_directories(
+		"${CMAKE_BINARY_DIR}"
         "${PROJECT_BINARY_DIR}"
         "${PROJECT_BINARY_DIR}/../../libdebpackages"
         "${PROJECT_BINARY_DIR}/../../libtld"

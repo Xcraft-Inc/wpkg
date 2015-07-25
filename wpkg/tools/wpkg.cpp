@@ -43,6 +43,7 @@
 #include    "bzlib.h"
 #include    "libtld/tld.h"
 #include    "controlled_vars/controlled_vars_version.h"
+#include    "controlled_vars/controlled_vars_auto_enum_init.h"
 #include    <assert.h>
 #include    <errno.h>
 #include    <signal.h>
@@ -335,8 +336,8 @@ private:
 
     typedef std::vector<std::string> filename_vector_t;
     typedef controlled_vars::limited_auto_init<char, 1, 9, 9> zlevel_t;
-    typedef controlled_vars::limited_auto_init<command_t, command_unknown, command_version, command_unknown> zcommand_t;
-    typedef controlled_vars::limited_auto_init<memfile::memory_file::file_format_t, memfile::memory_file::file_format_undefined, memfile::memory_file::file_format_other, memfile::memory_file::file_format_best> zcompressor_t;
+    typedef controlled_vars::limited_auto_enum_init<command_t, command_unknown, command_version, command_unknown> zcommand_t;
+    typedef controlled_vars::limited_auto_enum_init<memfile::memory_file::file_format_t, memfile::memory_file::file_format_undefined, memfile::memory_file::file_format_other, memfile::memory_file::file_format_best> zcompressor_t;
 
     advgetopt::getopt                       f_opt;
     zcommand_t                              f_command;
@@ -2168,7 +2169,7 @@ void help(command_line& cl)
 
 command_line::command_line(int argc, char *argv[], std::vector<std::string> configuration_files)
     : f_opt(argc, argv, wpkg_options, configuration_files, "WPKG_OPTIONS")
-    , f_command(static_cast<int>(command_unknown)) // TODO: cast because of enum handling in controlled_vars...
+    , f_command(command_unknown)
     //, f_quiet(false) -- auto-init
     //, f_verbose(false) -- auto-init
     //, f_dry_run(false) -- auto-init
@@ -2711,7 +2712,7 @@ void command_line::set_command(command_t c)
     }
     // TODO: static_cast<> is  to avoid a warning, but the controlled_vars
     //       should allow better handling of enumerations
-    f_command = static_cast<int>(c);
+    f_command = c;
 }
 
 const advgetopt::getopt& command_line::opt() const
@@ -2851,7 +2852,9 @@ void init_manager(command_line& cl, wpkgar::wpkgar_manager& manager, const std::
     // shell script or batch file and run that with the right information
     // and the last command line would be used to restart your app.
     manager.add_self("wpkg");
-
+#ifdef MO_MINGW32
+    manager.add_self("wpkg-mingw32");
+#endif
     {
         // if wpkg upgraded itself then it created a copy of itself; these
         // few lines of code check for the existence of that copy and
@@ -3017,35 +3020,46 @@ void init_installer
         }
     }
 
-    // add the list of package names
-    if(package_name.empty())
+    try
     {
-        for(int i(0); i < max; ++i)
+        // add the list of package names
+        if(package_name.empty())
         {
-            const std::string& name( cl.get_string( option, i ) );
-            pkg_install.add_package( name, cl.opt().is_defined( "force-reinstall" ) );
-        }
+            for(int i(0); i < max; ++i)
+            {
+                const std::string& name( cl.get_string( option, i ) );
+                pkg_install.add_package( name, cl.opt().is_defined( "force-reinstall" ) );
+            }
 
-        if( pkg_install.count() == 0 )
-        {
-            wpkg_output::log("You are attempting to install one or more packages that are already installed. Nothing done! Use '--force-reinstall' to force a reinstallation.")
-                    .level(wpkg_output::level_warning)
-                    .module(wpkg_output::module_configure_package)
-                    .action("install-validation");
-            exit(0);
+            if( pkg_install.count() == 0 )
+            {
+                wpkg_output::log("You are attempting to install one or more packages that are already installed. Nothing done! Use '--force-reinstall' to force a reinstallation.")
+                        .level(wpkg_output::level_warning)
+                        .module(wpkg_output::module_configure_package)
+                        .action("install-validation");
+                exit(0);
+            }
+            //
+            if( pkg_install.count() != max )
+            {
+                wpkg_output::log("One or more packages you specified for installation are already installed. See the '--force-reinstall' option.")
+                        .level(wpkg_output::level_warning)
+                        .module(wpkg_output::module_configure_package)
+                        .action("install-validation");
+            }
         }
-        //
-        if( pkg_install.count() != max )
+        else
         {
-            wpkg_output::log("One or more packages you specified for installation are already installed. See the '--force-reinstall' option.")
-                    .level(wpkg_output::level_warning)
-                    .module(wpkg_output::module_configure_package)
-                    .action("install-validation");
+            pkg_install.add_package(package_name.full_path());
         }
     }
-    else
+    catch( const std::exception& e )
     {
-        pkg_install.add_package(package_name.full_path());
+        wpkg_output::log(e.what())
+                .level(wpkg_output::level_fatal)
+                .module(wpkg_output::module_configure_package)
+                .action("install-validation");
+        exit(1);
     }
 }
 
