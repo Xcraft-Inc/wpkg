@@ -1522,7 +1522,6 @@ CATCH_TEST_CASE( "AdvGetOptUnitTests::invalid_parameters", "AdvGetOptUnitTests" 
 }
 
 
-
 CATCH_TEST_CASE( "AdvGetOptUnitTests::valid_config_files", "AdvGetOptUnitTests" )
 {
     // default arguments
@@ -2011,6 +2010,16 @@ CATCH_TEST_CASE( "AdvGetOptUnitTests::valid_config_files", "AdvGetOptUnitTests" 
         CATCH_REQUIRE(opt.get_program_name() == "AdvGetOptUnitTests::valid_config_files");
         CATCH_REQUIRE(opt.get_program_fullname() == "tests/unittests/AdvGetOptUnitTests::valid_config_files");
     }
+}
+
+
+CATCH_TEST_CASE( "AdvGetOptUnitTests::valid_config_files_extra", "AdvGetOptUnitTests" )
+{
+    std::vector<std::string> empty_confs;
+
+    wpkg_filename::uri_filename config_filename(wpkg_filename::uri_filename::tmpdir(".config").append_child("wpkg.config"));
+    std::vector<std::string> confs;
+    confs.push_back(config_filename.full_path());
 
     // new set of options to test the special "--" option
     const advgetopt::getopt::option valid_options_with_multiple[] =
@@ -2473,7 +2482,6 @@ CATCH_TEST_CASE( "AdvGetOptUnitTests::valid_config_files", "AdvGetOptUnitTests" 
             CATCH_REQUIRE(opt.get_program_fullname() == "tests/unittests/unittest_advgetopt/AdvGetOptUnitTests::invalid_parameters/no-name-arg-defaults-to-dash-dash");
         }
     }
-
 }
 
 
