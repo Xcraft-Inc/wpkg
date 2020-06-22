@@ -34,6 +34,7 @@
 #include    "controlled_vars/controlled_vars_limited_auto_enum_init.h"
 #include    <stdexcept>
 #include    <vector>
+#include    <string>
 
 
 namespace wpkg_dependencies

@@ -108,9 +108,9 @@ types_t const g_types[] =
     { "float",         "float",       "double",        FLAG_TYPE_FLOAT, 0 },
     { "double",        "double",      "double",        FLAG_TYPE_FLOAT, 0 }, /* "long double" would be problematic here */
     { "long double",   "longdouble",  "long double",   FLAG_TYPE_FLOAT, 0 },
-    // The following were for Apple computers with a PPC
-    //{ "size_t",        "size",        "uint64_t",      FLAG_TYPE_INT,   "#ifdef __APPLE__" },
-    //{ "time_t",        "time",        "int64_t",       FLAG_TYPE_INT,   "#ifdef __APPLE__" }
+    // The following were for Apple computers with a PPC and for Clang
+    { "size_t",        "size",        "uint64_t",      FLAG_TYPE_INT,   "#ifdef __clang__" },
+    { "time_t",        "time",        "int64_t",       FLAG_TYPE_INT,   "#ifdef __clang__" }
 };
 #define TYPES_ALL   (sizeof(g_types) / sizeof(g_types[0]))
 

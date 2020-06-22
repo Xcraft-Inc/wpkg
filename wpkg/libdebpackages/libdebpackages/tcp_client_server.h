@@ -27,6 +27,7 @@
  * remote data.
  */
 
+#include <string>
 #if defined(MO_WINDOWS)
 #include <winsock2.h>
 #else
