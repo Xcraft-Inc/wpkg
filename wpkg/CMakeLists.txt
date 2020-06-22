@@ -152,7 +152,7 @@ elseif( MSVC )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS" )
     set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS" )
 elseif( MINGW )
-    set( WPKG_PROCESSOR i386 )
+    set( WPKG_PROCESSOR amd64 )
     set( WPKG_OS mswindows )
     # WIN_MACHINE_FLAGS cannot be empty and since cmake adds -fPIC under
     # our feet, that makes no difference at this point...
