@@ -177,7 +177,11 @@ function( unigw_ConfigureMakeProject )
 		endif()
 	endif()
 
-	set( BUILD_CMD   ${CMAKE_BUILD_TOOL} )
+	if( CMAKE_GENERATOR STREQUAL "Unix Makefiles" )
+		set( BUILD_CMD   $(MAKE) )
+	else()
+		set( BUILD_CMD   ${CMAKE_BUILD_TOOL} )
+	endif()
 
 	add_custom_target(
 		${FULL_PROJECT_NAME}-make
