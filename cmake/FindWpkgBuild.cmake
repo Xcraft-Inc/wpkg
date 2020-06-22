@@ -182,8 +182,8 @@ function( unigw_ConfigureMakeProject )
 	add_custom_target(
 		${FULL_PROJECT_NAME}-make
 		COMMAND ${ECHO_CMD} ${BUILD_CMD}
-			1> ${BUILD_DIR}/${FULL_PROJECT_NAME}_make.log
-			2> ${BUILD_DIR}/${FULL_PROJECT_NAME}_make.err
+			# 1> ${BUILD_DIR}/${FULL_PROJECT_NAME}_make.log
+			# 2> ${BUILD_DIR}/${FULL_PROJECT_NAME}_make.err
 		DEPENDS ${CONFIGURE_TARGETS}
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Building ${FULL_PROJECT_NAME}"
@@ -193,8 +193,8 @@ function( unigw_ConfigureMakeProject )
 	add_custom_target(
 		${FULL_PROJECT_NAME}-package
 		COMMAND ${ECHO_CMD} ${BUILD_CMD} build_packages
-			1>> ${BUILD_DIR}/${FULL_PROJECT_NAME}_make.log
-			2>> ${BUILD_DIR}/${FULL_PROJECT_NAME}_make.err
+			# 1>> ${BUILD_DIR}/${FULL_PROJECT_NAME}_make.log
+			# 2>> ${BUILD_DIR}/${FULL_PROJECT_NAME}_make.err
 		DEPENDS ${FULL_PROJECT_NAME}-make
 		WORKING_DIRECTORY ${BUILD_DIR}
 		COMMENT "Packaging ${FULL_PROJECT_NAME}"
