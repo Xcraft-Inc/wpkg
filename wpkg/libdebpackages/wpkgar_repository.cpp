@@ -455,12 +455,39 @@ int wpkgar_repository::get_parameter(parameter_t flag, int default_value) const
  *
  * \param[in] index_file  The file where the repository information is saved.
  */
-void wpkgar_repository::create_index(memfile::memory_file& index_file)
+void wpkgar_repository::create_index(memfile::memory_file& index_file, const std::string* archive)
 {
     // save all the data in a map so we can have it in alphabetical order
     // before creating the output tarball
     typedef std::map<std::string, index_entry> map_t;
     map_t map;
+    std::map<std::string, std::string> map_hash_prev;
+    map_t map_idx_prev;
+
+    if(archive)
+    {
+        wpkg_filename::uri_filename index_filename(*archive);
+        if(index_filename.exists())
+        {
+            memfile::memory_file package_index;
+            package_index.read_file(*archive);
+            wpkgar::wpkgar_repository::entry_vector_t entries;
+            load_index(package_index, entries);
+
+            for(wpkgar::wpkgar_repository::entry_vector_t::const_iterator it(entries.begin()); it != entries.end(); ++it)
+            {
+                wpkg_control::binary_control_file ctrl(std::shared_ptr<wpkg_control::control_file::control_file_state_t>(new wpkg_control::control_file::control_file_state_t));
+                ctrl.set_input_file(&*it->f_control);
+                ctrl.read();
+                ctrl.set_input_file(nullptr);
+                std::string package_name(it->f_info.get_basename().c_str());
+                std::string::size_type p = package_name.find_last_of('.');
+                package_name = package_name.substr(0, p);
+                map_hash_prev[package_name] = ctrl.get_field("Package-md5sum").c_str();
+                map_idx_prev[package_name] = *it;
+            }
+        }
+    }
 
     std::string index_date(wpkg_util::rfc2822_date());
     index_file.create(memfile::memory_file::file_format_tar);
@@ -474,13 +501,75 @@ void wpkgar_repository::create_index(memfile::memory_file& index_file)
         r.dir_rewind(*it, get_parameter(wpkgar_repository_recursive, false) != 0);
         for(;;)
         {
+            wpkg_filename::uri_filename filename;
+            std::string md5sum;
             memfile::memory_file::file_info info;
             memfile::memory_file data;
-            if(!r.dir_next(info, &data))
+            wpkg_filename::uri_filename path;
+            if(r.get_format() == memfile::memory_file::file_format_directory)
             {
-                break;
+                if(!r.dir_next(info, NULL))
+                {
+                    break;
+                }
+
+                filename = info.get_uri();
+                path = filename.remove_common_segments(*it).dirname(false);
+                wpkg_filename::uri_filename md5sum_filename(filename);
+                md5sum_filename.set_filename(md5sum_filename.original_filename() + ".md5sum");
+                if(md5sum_filename.exists())
+                {
+                    int offset(0);
+                    memfile::memory_file md5sum_file;
+                    md5sum_file.read_file(md5sum_filename);
+                    md5sum_file.read_line(offset, md5sum);
+                }
+
+                switch(info.get_file_type())
+                {
+                case memfile::memory_file::file_info::regular_file:
+                case memfile::memory_file::file_info::continuous:
+                {
+                    std::string package_name(info.get_basename());
+                    std::string::size_type p = package_name.find_last_of('.');
+                    package_name = package_name.substr(0, p);
+                    if(map_hash_prev.find(package_name) != map_hash_prev.end())
+                    {
+                        if(md5sum == map_hash_prev[package_name])
+                        {
+                            const std::string ctrl_name(path.append_child(filename.basename() + ".ctrl").path_only());
+                            map[ctrl_name] = map_idx_prev[package_name];
+                            continue;
+                        }
+                    }
+                    data.read_file(info.get_filename());
+                    break;
+                }
+
+                default:
+                    break;
+                }
             }
-            const wpkg_filename::uri_filename& filename(info.get_uri());
+            else
+            {
+                if(!r.dir_next(info, &data))
+                {
+                    break;
+                }
+
+                filename = info.get_uri();
+                path = filename.remove_common_segments(*it).dirname(false);
+                wpkg_filename::uri_filename md5sum_filename(filename);
+                md5sum_filename.set_filename(md5sum_filename.original_filename() + ".md5sum");
+                if(md5sum_filename.exists())
+                {
+                    int offset(0);
+                    memfile::memory_file md5sum_file;
+                    md5sum_file.read_file(md5sum_filename);
+                    md5sum_file.read_line(offset, md5sum);
+                }
+            }
+
             if(info.get_file_type() != memfile::memory_file::file_info::regular_file)
             {
                 // we are only interested by regular files,
@@ -516,7 +605,6 @@ void wpkgar_repository::create_index(memfile::memory_file& index_file)
                     .action("install-validation");
                 continue;
             }
-            wpkg_filename::uri_filename const path(filename.remove_common_segments(*it).dirname(false));
 
             data.dir_rewind();
             for(;;)
@@ -581,7 +669,13 @@ void wpkgar_repository::create_index(memfile::memory_file& index_file)
                                 }
                             }
                             ctrl.set_field("Index-Date", index_date);
-                            ctrl.set_field("Package-md5sum", data.md5sum());
+
+                            if(md5sum.empty())
+                            {
+                                md5sum = data.md5sum();
+                            }
+
+                            ctrl.set_field("Package-md5sum", md5sum);
                             ctrl.set_field("Package-Size", data.size());
                             ctrl.write(*control, wpkg_field::field_file::WRITE_MODE_FIELD_ONLY);
                             idx_info.set_size(control->size());

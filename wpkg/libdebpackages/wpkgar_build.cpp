@@ -1005,6 +1005,19 @@ void wpkgar_build::save_package(memfile::memory_file& debian_ar, const wpkg_cont
         f_package_name = f_output_dir.append_child(f_package_name.path_only());
     }
     debian_ar.write_file(f_package_name, true);
+
+    // generate MD5 sum by the way, it can be used by the create_index command
+    // in order to improve the index generation speed.
+    md5::raw_md5sum raw;
+    debian_ar.raw_md5sum(raw);
+
+    memfile::memory_file md5sum_file;
+    md5sum_file.create(memfile::memory_file::file_format_other);
+    md5sum_file.printf("%s", md5::md5sum::sum(raw).c_str());
+
+    wpkg_filename::uri_filename md5sum_filename(f_package_name);
+    md5sum_filename.set_filename(md5sum_filename.original_filename() + ".md5sum");
+    md5sum_file.write_file(md5sum_filename);
 }
 
 

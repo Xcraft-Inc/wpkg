@@ -137,7 +137,7 @@ public:
     void set_parameter(parameter_t flag, int value);
     int get_parameter(parameter_t flag, int default_value) const;
 
-    void create_index(memfile::memory_file& index_file);
+    void create_index(memfile::memory_file& index_file, const std::string* archive = NULL);
     static void load_index(const memfile::memory_file& file, entry_vector_t& entries);
 
     void read_sources(const memfile::memory_file& filename, source_vector_t& sources);

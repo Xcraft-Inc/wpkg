@@ -4227,7 +4227,7 @@ void create_index(command_line& cl)
 
     // create the output
     memfile::memory_file index;
-    pkg_repository.create_index(index);
+    pkg_repository.create_index(index, &archive);
 
     if(index.size() == 0)
     {
