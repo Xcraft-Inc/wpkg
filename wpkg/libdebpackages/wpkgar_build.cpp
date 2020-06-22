@@ -1130,6 +1130,10 @@ bool wpkgar_build::validate_source(source_validation& validate_status, wpkg_cont
         {
             break;
         }
+        if(info.get_file_type() == memfile::memory_file::file_info::directory)
+        {
+            continue;
+        }
         // define a name that is not case sensitive for some of the files
         // that we are looking for; also avoid the path in that one
         case_insensitive::case_insensitive_string basename(info.get_basename());
@@ -2503,6 +2507,10 @@ void wpkgar_build::build_project_packages()
                 if(!source_dir.dir_next(info, NULL))
                 {
                     break;
+                }
+                if(info.get_file_type() == memfile::memory_file::file_info::directory)
+                {
+                    continue;
                 }
 
                 // move (rename) a few files if necessary
