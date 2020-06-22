@@ -2369,8 +2369,8 @@ bool uri_filename::is_absolute() const
  */
 bool uri_filename::is_valid_windows_part(const std::string& path_part)
 {
-    const char *s(path_part.c_str());
-    const char *start(s);
+    const unsigned char *s(reinterpret_cast<const unsigned char *>(path_part.c_str()));
+    const unsigned char *start(s);
 
     if(*s == ' ')
     {
