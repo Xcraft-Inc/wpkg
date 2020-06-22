@@ -44,7 +44,7 @@ endif()
 find_program( NSIS makensis PATH "c:\\Program Files (x86)\\NSIS" )
 
 if( NOT EXISTS "${NSIS}" )
-    message( FATAL_ERROR "NSIS is needed! Please install." )
+    set( USE_NSIS OFF )
 endif()
 
 unigw_ParseVersion( WPKG ${UNIGW_VERSION} )
@@ -64,15 +64,17 @@ set( NSIS_COMMMAND_LINE
         ${CMAKE_CURRENT_SOURCE_DIR}/setup.nsi
 )
 
-add_custom_target( nsis_package ALL
-        ${NSIS_COMMMAND_LINE}
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        DEPENDS build-all
-    )
+if ( USE_NSIS )
+    add_custom_target( nsis_package ALL
+            ${NSIS_COMMMAND_LINE}
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            DEPENDS build-all
+        )
 
-add_custom_target( nsis_package_standalone
-        ${NSIS_COMMMAND_LINE}
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
+    add_custom_target( nsis_package_standalone
+            ${NSIS_COMMMAND_LINE}
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+endif()
 
 # vim: ts=4 sw=4 et
