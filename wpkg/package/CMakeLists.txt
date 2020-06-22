@@ -41,25 +41,8 @@
 #    return()
 #endif()
 
-if( MO_MINGW32 )
-    get_filename_component( MINGW32_PATH ${CMAKE_MAKE_PROGRAM} DIRECTORY )
-    file( GLOB MINGW32_DLL_LIST "${MINGW32_PATH}/*.dll" )
-    install(
-        FILES
-            ${MINGW32_DLL_LIST}
-        DESTINATION
-            bin
-        COMPONENT
-            mingw32
-       )
-endif()
-
 set( LOCAL_WPKG_ROOT "${CMAKE_BINARY_DIR}/WPKG" )
-if( UNIX )
-    set( INSTALL_PREFIX "/usr" )
-else()
-    set( INSTALL_PREFIX "" )
-endif()
+set( INSTALL_PREFIX "/usr" )
 
 if( NOT EXISTS "${WPKG_ROOT}" )
     file( MAKE_DIRECTORY "${WPKG_ROOT}" )
@@ -73,14 +56,6 @@ else()
     set( COMPONENT_LIST runtime development documentation headers )
     set( INSTALL_PACKAGES wpkg wpkg-dev wpkg-doc wpkg-hdrs-dev )
     set( PRIORITY required )
-    if( MO_WINDOWS )
-        set( PLATFORM_DEPENDS "Depends/runtime: msvc-runtime (= 12.0.0)" )
-    elseif( MO_MINGW32 )
-        set( SUBPACKAGES "${SUBPACKAGES}, mingw32" )
-        set( PLATFORM_DEPENDS "Depends/runtime: wpkgmingw32 (>= \${wpkg:version})" )
-        list( APPEND INSTALL_PACKAGES wpkgmingw32 )
-        list( APPEND COMPONENT_LIST mingw32 )
-    endif()
 endif()
 
 configure_file( admindb_init.txt "${LOCAL_WPKG_ROOT}/admindb_init.txt" @ONLY )
@@ -132,16 +107,6 @@ add_custom_command(
         DEPENDS "${WPKG_CONTROL_FILE}"
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-
-if( MO_WINDOWS )
-    set( MSVC_REDIST 
-        COMMAND ${WPKG}
-            --verbose
-            --compressor gzip
-            --output-dir "${WPKG_ROOT}/packages"
-            --build ${CMAKE_CURRENT_SOURCE_DIR}/vcredist
-    )
-endif()
     
 add_custom_target( build_packages
         ${MSVC_REDIST}
