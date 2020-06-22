@@ -5245,7 +5245,7 @@ void field(command_line& cl)
     init_manager(cl, manager, "field");
     manager.set_control_file_state(std::shared_ptr<wpkg_control::control_file::control_file_state_t>(new wpkg_control::control_file::contents_control_file_state_t));
     std::string name(cl.get_string("field"));
-    manager.load_package(name);
+    manager.load_package(name, false, true);
     int max(cl.size());
     if(max == 0)
     {
@@ -6716,7 +6716,7 @@ void show(command_line& cl)
     init_manager(cl, manager, "show");
     manager.set_control_file_state(std::shared_ptr<wpkg_control::control_file::control_file_state_t>(new wpkg_control::control_file::contents_control_file_state_t));
     std::string name(cl.get_string("show"));
-    manager.load_package(name);
+    manager.load_package(name, false, true);
     if(cl.opt().is_defined("showformat"))
     {
         // the format is defined, retrieve the values

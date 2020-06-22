@@ -201,7 +201,7 @@ public:
     void                                    set_database_path(const wpkg_filename::uri_filename& database_path);
 
     bool                                    has_package(const wpkg_filename::uri_filename& package_name) const;
-    void                                    load_package(const wpkg_filename::uri_filename& name, bool force_reload = false);
+    void                                    load_package(const wpkg_filename::uri_filename& name, bool force_reload = false, bool skip_data = false);
     wpkg_filename::uri_filename             get_package_path(const wpkg_filename::uri_filename& package_name) const;
     void                                    get_wpkgar_file(const wpkg_filename::uri_filename& package_name, memfile::memory_file *& wpkgar_file);
     package_status_t                        package_status(const wpkg_filename::uri_filename& package_name);
@@ -269,7 +269,7 @@ private:
                                             wpkgar_manager& operator = (const wpkgar_manager& rhs);
 
     const std::shared_ptr<wpkgar_package>   get_package(const wpkg_filename::uri_filename& package_name) const;
-    void                                    load_temporary_package(const wpkg_filename::uri_filename& filename);
+    void                                    load_temporary_package(const wpkg_filename::uri_filename& filename, bool skip_data = false);
     bool                                    run_one_script(const wpkg_filename::uri_filename& package_name, const std::string& interpreter, const wpkg_filename::uri_filename& script_name, const std::string& parameters);
 
     typedef std::map<std::string, std::shared_ptr<wpkgar_package> >         packages_t;

@@ -309,7 +309,7 @@ public:
     void check_contents();
     void set_field_variable(const std::string& name, const std::string& value);
 
-    void read_archive(memfile::memory_file& p);
+    void read_archive(memfile::memory_file& p, bool skip_data = false);
     void read_package();
     bool has_control_file(const std::string& filename);
     void read_control_file(memfile::memory_file& p, std::string& filename, bool compress);
@@ -516,7 +516,7 @@ void wpkgar_package::read_package()
     }
 }
 
-void wpkgar_package::read_archive(memfile::memory_file& p)
+void wpkgar_package::read_archive(memfile::memory_file& p, bool skip_data)
 {
     if(f_wpkgar_file.size() != 0)
     {
@@ -617,18 +617,21 @@ void wpkgar_package::read_archive(memfile::memory_file& p)
         }
         else if(filename.substr(0, 8) == "data.tar")
         { // ignore compression extension
-            f_files["data.tar"] = file;
-            // this is the data file, read its contents
-            if(data.is_compressed())
+            if(!skip_data)
             {
-                memfile::memory_file d;
-                data.copy(d);
-                d.decompress(data);
+                f_files["data.tar"] = file;
+                // this is the data file, read its contents
+                if(data.is_compressed())
+                {
+                    memfile::memory_file d;
+                    data.copy(d);
+                    d.decompress(data);
+                }
+                // we save the file uncompressed in our db
+                info.set_filename("data.tar");
+                f_wpkgar_file.append_file(info, data);
+                read_data(data);
             }
-            // we save the file uncompressed in our db
-            info.set_filename("data.tar");
-            f_wpkgar_file.append_file(info, data);
-            read_data(data);
             has_data_tar_gz = true;
         }
         else
@@ -1445,8 +1448,9 @@ void wpkgar_manager::set_database_path(const wpkg_filename::uri_filename& databa
  * \param[in] filename  The name of the file to load.
  * \param[in] force_reload  If the package is installed, force a reload
  *                          (useful after an install/upgrade.)
+ * \param[in] skip_data  Do not load data.tar file.
  */
-void wpkgar_manager::load_package(const wpkg_filename::uri_filename& filename, bool force_reload)
+void wpkgar_manager::load_package(const wpkg_filename::uri_filename& filename, bool force_reload, bool skip_data)
 {
     // a .deb package MUST include at least one _ generally two
     // (one if the architecture is not specified); the uri_filename
@@ -1457,7 +1461,7 @@ void wpkgar_manager::load_package(const wpkg_filename::uri_filename& filename, b
     {
         // load a "temporary" package
         // the name is expected to be a filename
-        load_temporary_package(filename);
+        load_temporary_package(filename, skip_data);
         return;
     }
 
@@ -1514,7 +1518,7 @@ void wpkgar_manager::load_package(const wpkg_filename::uri_filename& filename, b
  *
  * \param[in] filename  The name of the package file to load.
  */
-void wpkgar_manager::load_temporary_package(const wpkg_filename::uri_filename& filename)
+void wpkgar_manager::load_temporary_package(const wpkg_filename::uri_filename& filename, bool skip_data)
 {
     // note that in this case the basename of the package is something like:
     //     <package name>_<version>_<architecture>
@@ -1568,7 +1572,7 @@ void wpkgar_manager::load_temporary_package(const wpkg_filename::uri_filename& f
     // the file looks proper, create a package and load the files
     std::shared_ptr<wpkgar_package> package(new wpkgar_package(this, fullname, f_control_file_state));
     package->set_package_path(wpkg_filename::uri_filename::tmpdir("packages").append_child(basename));
-    package->read_archive(p);
+    package->read_archive(p, skip_data);
     f_packages[basename] = package;
 }
 
