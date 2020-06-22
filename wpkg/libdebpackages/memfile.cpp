@@ -60,6 +60,8 @@
 #include    <stdlib.h>
 #include    <memory.h>
 #include    <stdarg.h>
+#include    <sys/types.h>
+#include    <utime.h>
 #include    <ctime>
 #include    <algorithm>
 #include    <iostream>
@@ -1069,6 +1071,22 @@ void memory_file::info_to_disk_file(const wpkg_filename::uri_filename& filename,
         }
     }
 #endif
+
+    struct utimbuf times = {
+        info.get_atime(),
+        info.get_mtime()
+    };
+    if(utime(os_name.get_utf8().c_str(), &times) != 0)
+    {
+        if(err & file_info_return_errors)
+        {
+            err |= file_info_time_error;
+        }
+        else
+        {
+            throw memfile_exception_io("cannot change access and modification times of \"" + filename.original_filename() + "\" as expected (not running as Administrator/root?)");
+        }
+    }
 }
 
 

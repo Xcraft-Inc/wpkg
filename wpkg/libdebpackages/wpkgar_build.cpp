@@ -2130,7 +2130,6 @@ void wpkgar_build::build_source()
         info.set_filename(filename.full_path());
         info.set_user("Administrator");
         info.set_group("Administrators");
-        info.set_mtime(now);
         append_file(data, info, file_data);
 
         // regular files get an md5sums

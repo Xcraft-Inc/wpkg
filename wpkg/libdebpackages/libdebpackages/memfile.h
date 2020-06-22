@@ -266,6 +266,7 @@ public:
     static const int file_info_return_errors = 0x01;
     static const int file_info_permissions_error = 0x02;
     static const int file_info_owner_error = 0x04;
+    static const int file_info_time_error = 0x05;
 
     memory_file();
 
