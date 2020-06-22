@@ -2812,6 +2812,33 @@ void wpkgar_build::build_repository()
                         source_map_t::const_iterator dependency(all_packages.find(d.f_name));
                         if(dependency == all_packages.end())
                         {
+                            // Error only if this dependency is matching the core architecture
+                            bool skip(!d.f_architectures.empty());
+                            f_manager->load_package("core");
+                            const std::string target_architecture = f_manager->get_field("core", "Architecture");
+
+                            for(std::vector<std::string>::size_type k(0); k < d.f_architectures.size(); ++k)
+                            {
+                                if(wpkg_dependencies::dependencies::match_architectures(target_architecture, d.f_architectures[k]))
+                                {
+                                    skip = false;
+                                    break;
+                                }
+                            }
+
+                            if(skip)
+                            {
+                                wpkg_output::log("package %1 depends on %2 (%3) which is not defined among your source packages but using an alternate architecture.")
+                                        .quoted_arg(sources[i]->f_filename)
+                                        .quoted_arg(d.f_name)
+                                        .arg(d.to_string())
+                                    .level(wpkg_output::level_warning)
+                                    .module(wpkg_output::module_validate_installation)
+                                    .package(package_name)
+                                    .action("build-validation");
+                                continue;
+                            }
+
                             // TBD: should we give a chance to the builder
                             //      for packages to be defined in their
                             //      repository (pre-compiled)?

@@ -2549,6 +2549,24 @@ bool wpkgar_install::trim_dependency
         return false;
     }
 
+    bool skip(!dependency.f_architectures.empty());
+    f_manager->load_package("core");
+    const std::string target_architecture = f_manager->get_field("core", "Architecture");
+
+    for(std::vector<std::string>::size_type k(0); k < dependency.f_architectures.size(); ++k)
+    {
+        if(wpkg_dependencies::dependencies::match_architectures(target_architecture, dependency.f_architectures[k]))
+        {
+            skip = false;
+            break;
+        }
+    }
+
+    if( skip )
+    {
+        return false;
+    }
+
     // we use the auto-update flag to know when an implicit package is used
     // to automatically update an installed package (opposed to installing
     // a new intermediate package) although at this point we do NOT mark
@@ -3505,7 +3523,23 @@ void wpkgar_install::find_dependencies( wpkgar_package_list_t& tree, const wpkga
 
             if( found == validation_return_missing )
             {
-                missing.push_back(d);
+                bool is_missing(d.f_architectures.empty());
+                f_manager->load_package("core");
+                const std::string target_architecture = f_manager->get_field("core", "Architecture");
+
+                for(std::vector<std::string>::size_type k(0); k < d.f_architectures.size(); ++k)
+                {
+                    if(wpkg_dependencies::dependencies::match_architectures(target_architecture, d.f_architectures[k]))
+                    {
+                        is_missing = true;
+                        break;
+                    }
+                }
+
+                if( is_missing )
+                {
+                    missing.push_back(d);
+                }
             }
             else if( found == validation_return_held )
             {
