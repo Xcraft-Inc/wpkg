@@ -1419,8 +1419,9 @@ std::string memory_file::to_base64(const char *buf, size_t size)
  *
  * \param[in] filename  The name of a file to read from.
  * \param[in] info  The information about this file when available.
+ * \param[in] block_limit  Read only block_limit first blocks of BLOCK_MANAGER_BUFFER_SIZE.
  */
-void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_info *info)
+void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_info *info, int block_limit)
 {
     reset();
 
@@ -1460,6 +1461,11 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
         }
         if(file_size > 0)
         {
+            if( block_limit != -1 && file_size > block_limit * block_manager::BLOCK_MANAGER_BUFFER_SIZE )
+            {
+                file_size = block_limit * block_manager::BLOCK_MANAGER_BUFFER_SIZE;
+            }
+
             file.seek(0, wpkg_stream::fstream::beg);
 
             // read per block (at most) to avoid allocating a really big buffer

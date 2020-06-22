@@ -283,7 +283,7 @@ public:
     static std::string to_base64(const char *buf, size_t size);
 
     // read from and write to disk
-    void read_file(const wpkg_filename::uri_filename& filename, file_info *info = NULL);
+    void read_file(const wpkg_filename::uri_filename& filename, file_info *info = NULL, int block_limit = -1);
     void write_file(const wpkg_filename::uri_filename& filename, bool create_folders = false, bool force = false) const;
     void copy(memory_file& destination) const;
     int compare(const memory_file& rhs) const;

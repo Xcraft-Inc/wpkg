@@ -614,24 +614,25 @@ void wpkgar_package::read_archive(memfile::memory_file& p, bool skip_data)
             f_wpkgar_file.append_file(info, data);
             read_control(data);
             has_control_tar_gz = true;
+            if( skip_data )
+            {
+                break;
+            }
         }
         else if(filename.substr(0, 8) == "data.tar")
         { // ignore compression extension
-            if(!skip_data)
+            f_files["data.tar"] = file;
+            // this is the data file, read its contents
+            if(data.is_compressed())
             {
-                f_files["data.tar"] = file;
-                // this is the data file, read its contents
-                if(data.is_compressed())
-                {
-                    memfile::memory_file d;
-                    data.copy(d);
-                    d.decompress(data);
-                }
-                // we save the file uncompressed in our db
-                info.set_filename("data.tar");
-                f_wpkgar_file.append_file(info, data);
-                read_data(data);
+                memfile::memory_file d;
+                data.copy(d);
+                d.decompress(data);
             }
+            // we save the file uncompressed in our db
+            info.set_filename("data.tar");
+            f_wpkgar_file.append_file(info, data);
+            read_data(data);
             has_data_tar_gz = true;
         }
         else
@@ -652,7 +653,7 @@ void wpkgar_package::read_archive(memfile::memory_file& p, bool skip_data)
     {
         throw wpkgar_exception_invalid("the control.tar.gz file was not found in this package");
     }
-    if(!has_data_tar_gz)
+    if(!has_data_tar_gz && !skip_data)
     {
         throw wpkgar_exception_invalid("the data.tar.gz file was not found in this package");
     }
@@ -1555,7 +1556,8 @@ void wpkgar_manager::load_temporary_package(const wpkg_filename::uri_filename& f
 
     // in this case filename is a direct reference to a package (the .deb file)
     memfile::memory_file p;
-    p.read_file(filename);
+    // load only the first 8 MB when we want to skip the data file
+    p.read_file(filename, NULL, skip_data ? 128 : -1);
     if(p.is_compressed())
     {
         // the file should not be compressed though
