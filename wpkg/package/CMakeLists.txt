@@ -132,6 +132,7 @@ add_custom_target( build_packages
             --root    "${WPKG_ROOT}"
             --running-copy
             --force-reinstall
+            --force-file-info
             --install ${INSTALL_PACKAGES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS
