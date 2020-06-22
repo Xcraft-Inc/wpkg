@@ -47,6 +47,8 @@ find_package( WpkgBuild REQUIRED )
 
 set( UNIGW_VERSION "1.0.2" CACHE STRING "WPKG version." )
 
+option( BUILD_PKGEXPLORER "Enable the build of pkg-explorer" OFF )
+
 
 ################################################################################
 # WPKG libraries
@@ -61,12 +63,14 @@ unigw_ConfigureMakeProject(
     CONFIG_ARGS  -DWPKG_VERSION=${UNIGW_VERSION}
 )
 
-unigw_ConfigureMakeProject(
-    PROJECT_NAME pkg-explorer
-    DEPENDS      wpkg-Release
-    BUILD_TYPE   Release
-    CONFIG_ARGS  -DWPKG_VERSION=${UNIGW_VERSION}
-)
+if( BUILD_PKGEXPLORER )
+    unigw_ConfigureMakeProject(
+        PROJECT_NAME pkg-explorer
+        DEPENDS      wpkg-Release
+        BUILD_TYPE   Release
+        CONFIG_ARGS  -DWPKG_VERSION=${UNIGW_VERSION}
+    )
+endif()
 
 get_property( BUILD_TARGETS GLOBAL PROPERTY BUILD_TARGETS )
 get_property( CLEAN_TARGETS GLOBAL PROPERTY CLEAN_TARGETS )
