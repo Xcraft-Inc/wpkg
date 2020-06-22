@@ -408,12 +408,12 @@ uint32_t tar_check_sum(const char *s)
     uint32_t result = 8 * ' '; // the checksum field
     // name + mode + uid + gid + size + mtime = 148 bytes
     for(int n = 148; n > 0; --n, ++s) {
-        result += *s;
+        result += static_cast<unsigned char>(*s);
     }
     s += 8; // skip the checksum field
     // everything after the checksum is another 356 bytes
     for(int n = 356; n > 0; --n, ++s) {
-        result += *s;
+        result += static_cast<unsigned char>(*s);
     }
     return result;
 }
