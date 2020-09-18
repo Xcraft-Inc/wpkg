@@ -1664,7 +1664,7 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
                 {
                     throw memfile_exception_io("received an HTTP Location field without a redirect response");
                 }
-                uri.set_filename(location, accept_special_windows_filename);
+                uri.set_filename(location);
                 std::string location_scheme(uri.path_scheme());
                 if(location_scheme != "http" && location_scheme != "https")
                 {
@@ -2195,7 +2195,7 @@ int memory_file::dir_pos() const
     return f_dir_pos;
 }
 
-bool memory_file::dir_next(file_info& info, memory_file *data) const
+bool memory_file::dir_next(file_info& info, memory_file *data, bool accept_special_windows_filename) const
 {
     if(data != NULL)
     {
@@ -2231,7 +2231,7 @@ bool memory_file::dir_next(file_info& info, memory_file *data) const
         case file_info::continuous: // this should not happen
             if(data != NULL) {
                 // user wants a copy of the data!
-                data->read_file(info.get_filename());
+                data->read_file(info.get_filename(), NULL, -1, accept_special_windows_filename);
             }
             break;
 
