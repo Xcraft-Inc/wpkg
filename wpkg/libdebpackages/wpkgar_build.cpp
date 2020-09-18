@@ -165,6 +165,7 @@ const char * const non_binary_fields[] =
 wpkgar_build::wpkgar_build(wpkgar_manager *manager, const std::string& build_directory)
     : f_manager(manager)
     //, f_zlevel(9) -- auto-init
+    , f_accept_special_windows_filename(false)
     //, f_ignore_empty_packages(false) -- auto-init
     //, f_run_tests(false) -- auto-init
     //, f_rename_changelog(false) -- auto-init
@@ -329,6 +330,11 @@ void wpkgar_build::set_compressor(memfile::memory_file::file_format_t compressor
     }
 }
 
+
+void wpkgar_build::accept_special_windows_filename()
+{
+    f_accept_special_windows_filename = true;
+}
 
 /** \brief Set the maximum length of a path.
  *
@@ -2076,7 +2082,7 @@ void wpkgar_build::build_source()
     // although the tarball looks like it is ready for inclusion,
     // we want to move the files under /usr/src/<package-name>_<version>
     memfile::memory_file source_tar_gz;
-    source_tar_gz.read_file(source_file);
+    source_tar_gz.read_file(source_file, NULL, -1, f_accept_special_windows_filename);
     memfile::memory_file source_tar;
     source_tar_gz.decompress(source_tar);
     source_tar_gz.reset();

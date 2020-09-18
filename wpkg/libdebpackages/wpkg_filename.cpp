@@ -966,7 +966,7 @@ uri_filename::uri_filename(const std::string& filename)
  *
  * \param[in] filename  The new filename to save in this uri_filename object.
  */
-void uri_filename::set_filename(std::string filename)
+void uri_filename::set_filename(std::string filename, bool accept_special_windows_filename)
 {
     // all of those parameters are saved in these temporary strings
     // and copied in the object at the end assuming no error occured
@@ -1190,7 +1190,7 @@ void uri_filename::set_filename(std::string filename)
             // first time, we do not add that to our vector though
             if( !segment_str.empty() )
             {
-                if(wpkg_util::is_special_windows_filename(segment_str))
+                if(!accept_special_windows_filename && wpkg_util::is_special_windows_filename(segment_str))
                 {
                     invalid_windows_name = true;
                 }
@@ -1459,7 +1459,7 @@ void uri_filename::set_filename(std::string filename)
     // (i.e. if you cross compile and cross build packages then you
     // want to check those for full compatibility)
     lastname.assign(segment_start, s - segment_start);
-    if(wpkg_util::is_special_windows_filename(lastname))
+    if(!accept_special_windows_filename && wpkg_util::is_special_windows_filename(lastname))
     {
         invalid_windows_name = true;
     }
