@@ -2257,7 +2257,7 @@ bool memory_file::dir_next(file_info& info, memory_file *data, bool accept_speci
 
     case file_format_wpkg:
         // data read by dir_next_wpkg() if required
-        dir_next_wpkg(info, data);
+        dir_next_wpkg(info, data, accept_special_windows_filename);
         return true;
 
     case file_format_meta:
@@ -2915,7 +2915,7 @@ bool memory_file::dir_next_tar_read(file_info& info) const
     return true;
 }
 
-void memory_file::dir_next_wpkg(file_info& info, memory_file *data) const
+void memory_file::dir_next_wpkg(file_info& info, memory_file *data, bool accept_special_windows_filename) const
 {
     // archive file information is only defined even boundaries
     if((f_dir_pos & 1023) != 0)
@@ -3047,7 +3047,7 @@ void memory_file::dir_next_wpkg(file_info& info, memory_file *data) const
             {
                 throw memfile_exception_parameter("the f_package_path was not defined, call set_package_path()");
             }
-            data->read_file(f_package_path.append_child(info.get_filename()));
+            data->read_file(f_package_path.append_child(info.get_filename()), NULL, -1, accept_special_windows_filename);
             break;
 
         }
