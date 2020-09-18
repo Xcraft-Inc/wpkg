@@ -1145,7 +1145,7 @@ bool wpkgar_build::validate_source(source_validation& validate_status, wpkg_cont
         f_manager->check_interrupt();
 
         memfile::memory_file::file_info info;
-        if(!project_dir.dir_next(info, NULL, f_accept_special_windows_filename))
+        if(!project_dir.dir_next(info, NULL))
         {
             break;
         }

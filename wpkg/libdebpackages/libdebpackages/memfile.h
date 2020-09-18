@@ -308,7 +308,7 @@ public:
     // as well as disk directories
     void dir_rewind(const wpkg_filename::uri_filename& path = wpkg_filename::uri_filename(), bool recursive = true);
     int dir_pos() const;
-    bool dir_next(file_info& info, memory_file *data = NULL, bool accept_special_windows_filename = false) const;
+    bool dir_next(file_info& info, memory_file *data = NULL) const;
     int dir_size(const wpkg_filename::uri_filename& path, int& disk_size, int block_size = 512);
     void set_package_path(const wpkg_filename::uri_filename& path);
     static void disk_file_to_info(const wpkg_filename::uri_filename& filename, file_info& info);
