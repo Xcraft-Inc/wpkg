@@ -71,6 +71,8 @@
 #   include <netdb.h>
 #endif
 
+extern bool g_accept_special_windows_filename;
+
 
 /** \brief Declarations and implementation of filename related functions.
  *
@@ -1190,7 +1192,7 @@ void uri_filename::set_filename(std::string filename)
             // first time, we do not add that to our vector though
             if( !segment_str.empty() )
             {
-                if(wpkg_util::is_special_windows_filename(segment_str))
+                if(!g_accept_special_windows_filename && wpkg_util::is_special_windows_filename(segment_str))
                 {
                     invalid_windows_name = true;
                 }
@@ -1459,7 +1461,7 @@ void uri_filename::set_filename(std::string filename)
     // (i.e. if you cross compile and cross build packages then you
     // want to check those for full compatibility)
     lastname.assign(segment_start, s - segment_start);
-    if(wpkg_util::is_special_windows_filename(lastname))
+    if(!g_accept_special_windows_filename && wpkg_util::is_special_windows_filename(lastname))
     {
         invalid_windows_name = true;
     }

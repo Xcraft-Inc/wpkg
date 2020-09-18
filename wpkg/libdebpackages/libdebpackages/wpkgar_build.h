@@ -106,6 +106,7 @@ public:
     void set_parameter(parameter_t flag, int value);
     int get_parameter(parameter_t flag, int default_value) const;
     void set_zlevel(int zlevel);
+    void accept_special_windows_filename();
     void set_compressor(memfile::memory_file::file_format_t compressor);
     void set_path_length_limit(int limit);
     void set_extra_path(const wpkg_filename::uri_filename& extra_path);

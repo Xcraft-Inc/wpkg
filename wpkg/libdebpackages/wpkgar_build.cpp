@@ -52,6 +52,8 @@
 #include    <iostream>
 #include    <time.h>
 
+bool g_accept_special_windows_filename(false);
+
 namespace wpkgar
 {
 
@@ -329,6 +331,11 @@ void wpkgar_build::set_compressor(memfile::memory_file::file_format_t compressor
     }
 }
 
+
+void wpkgar_build::accept_special_windows_filename()
+{
+    g_accept_special_windows_filename = true;
+}
 
 /** \brief Set the maximum length of a path.
  *
