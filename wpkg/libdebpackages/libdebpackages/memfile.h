@@ -331,7 +331,7 @@ private:
     void dir_next_ar(file_info& info) const;
     bool dir_next_tar(file_info& info) const;
     bool dir_next_tar_read(file_info& info) const;
-    void dir_next_wpkg(file_info& info, memory_file *data, bool accept_special_windows_filename = false) const;
+    void dir_next_wpkg(file_info& info, memory_file *data) const;
     bool dir_next_meta(file_info& info) const;
     bool dir_next_sources(file_info& info) const;
     void append_ar(const file_info& info, const memory_file& data);
