@@ -2923,6 +2923,10 @@ void wpkgar_build::build_repository()
                         cmd += " --tmpdir ";
                         cmd += wpkg_util::make_safe_console_string(tmpdir);
                     }
+                    if(g_accept_special_windows_filename)
+                    {
+                        cmd += " --accept-special-windows-filename";
+                    }
                     cmd += " --create-index index.tar.gz";
                     cmd += " --force-file-info";
                     cmd += " --run-unit-tests";
