@@ -199,7 +199,7 @@ public:
                                 uri_filename(const char *filename = NULL);
                                 uri_filename(const std::string& filename);
 
-    void                        set_filename(std::string filename, bool accept_special_windows_filename = false);
+    void                        set_filename(std::string filename);
     void                        clear();
     void                        clear_cache();
 

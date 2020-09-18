@@ -1114,14 +1114,6 @@ const advgetopt::getopt::option wpkg_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-        "accept-special-windows-filename",
-        NULL,
-        "while building a package, accept files reserved on windows like aux, prn, lpt0, etc, ...",
-        advgetopt::getopt::no_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
         "admindir",
         "var/lib/wpkg",
         "define the administration directory (i.e. wpkg database folder), default is /var/lib/wpkg",
@@ -4331,11 +4323,7 @@ void build(command_line& cl, wpkg_filename::uri_filename& package_name, const st
 
     pkg_build->set_zlevel(cl.zlevel());
     pkg_build->set_compressor(cl.compressor());
-    if(cl.opt().is_defined("accept-special-windows-filename"))
-    {
-        pkg_build->accept_special_windows_filename();
-    }
-    else if(cl.opt().is_defined("enforce-path-length-limit"))
+    if(cl.opt().is_defined("enforce-path-length-limit"))
     {
         if(cl.opt().is_defined("path-length-limit"))
         {

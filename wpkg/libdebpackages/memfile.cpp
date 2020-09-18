@@ -1421,7 +1421,7 @@ std::string memory_file::to_base64(const char *buf, size_t size)
  * \param[in] info  The information about this file when available.
  * \param[in] block_limit  Read only block_limit first blocks of BLOCK_MANAGER_BUFFER_SIZE.
  */
-void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_info *info, int block_limit, bool accept_special_windows_filename)
+void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_info *info, int block_limit)
 {
     reset();
 
@@ -1664,7 +1664,7 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
                 {
                     throw memfile_exception_io("received an HTTP Location field without a redirect response");
                 }
-                uri.set_filename(location, accept_special_windows_filename);
+                uri.set_filename(location);
                 std::string location_scheme(uri.path_scheme());
                 if(location_scheme != "http" && location_scheme != "https")
                 {
