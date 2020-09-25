@@ -52,7 +52,7 @@
 #include    <iostream>
 #include    <time.h>
 
-bool g_accept_special_windows_filename(false);
+extern bool g_accept_special_windows_filename;
 
 namespace wpkgar
 {

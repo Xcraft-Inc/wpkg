@@ -71,7 +71,7 @@
 #   include <netdb.h>
 #endif
 
-extern bool g_accept_special_windows_filename;
+bool g_accept_special_windows_filename(false);
 
 
 /** \brief Declarations and implementation of filename related functions.

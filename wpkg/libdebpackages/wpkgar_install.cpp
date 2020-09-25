@@ -54,6 +54,7 @@
 #include    <Windows.h>
 #endif
 
+extern bool g_accept_special_windows_filename;
 
 namespace wpkgar
 {
@@ -683,6 +684,12 @@ int wpkgar_install::get_parameter(parameter_t flag, int default_value) const
         return default_value; // LCOV_EXCL_LINE
     }
     return it->second;
+}
+
+
+void wpkgar_install::accept_special_windows_filename()
+{
+    g_accept_special_windows_filename = true;
 }
 
 

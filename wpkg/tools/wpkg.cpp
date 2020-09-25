@@ -3224,6 +3224,11 @@ void install(command_line& cl, const wpkg_filename::uri_filename package_name = 
     init_installer(cl, manager, pkg_install, option, package_name);
     pkg_install.set_installing();
 
+    if(cl.opt().is_defined("accept-special-windows-filename"))
+    {
+        pkg_install.accept_special_windows_filename();
+    }
+
     wpkgar::wpkgar_lock lock_wpkg(&manager, "Installing");
 
     if( pkg_install.validate() && !cl.dry_run())
