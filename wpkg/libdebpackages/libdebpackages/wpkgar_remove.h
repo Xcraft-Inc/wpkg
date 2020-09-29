@@ -58,6 +58,7 @@ public:
     void add_package(const std::string& package);
     std::string get_package_name( const int i ) const;
     int count() const;
+    void accept_special_windows_filename();
 
     bool validate();
     int remove();

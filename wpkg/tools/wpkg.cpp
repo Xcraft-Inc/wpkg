@@ -6414,6 +6414,11 @@ void remove(command_line& cl)
     wpkgar::wpkgar_remove pkg_remove(&manager);
     init_remover(cl, manager, pkg_remove, "remove");
 
+    if(cl.opt().is_defined("accept-special-windows-filename"))
+    {
+        pkg_remove.accept_special_windows_filename();
+    }
+
     wpkgar::wpkgar_lock lock_wpkg(&manager, "Removing");
     if(pkg_remove.validate() && !cl.dry_run())
     {

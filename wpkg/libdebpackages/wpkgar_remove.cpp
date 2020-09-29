@@ -41,6 +41,7 @@
 #   include    <unistd.h>
 #endif
 
+extern bool g_accept_special_windows_filename;
 
 namespace wpkgar
 {
@@ -325,6 +326,12 @@ void wpkgar_remove::add_package(const std::string& package)
 int wpkgar_remove::count() const
 {
     return static_cast<int>(f_packages.size());
+}
+
+
+void wpkgar_remove::accept_special_windows_filename()
+{
+    g_accept_special_windows_filename = true;
 }
 
 
