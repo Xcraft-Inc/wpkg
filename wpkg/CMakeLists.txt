@@ -54,7 +54,7 @@ set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 
 # If you redesign wpkg and your version becomes
 # incompatible with ours, change this name!
-set( WPKG_VENDOR m2osw )
+set( WPKG_VENDOR xcraft )
 
 # For DEVENV, organize projects into folders
 #
