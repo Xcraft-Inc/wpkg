@@ -266,10 +266,17 @@ function( unigw_ConfigureMakeProject )
 		)
 	set_property( TARGET ${FULL_PROJECT_NAME}-clean PROPERTY FOLDER ${FULL_PROJECT_NAME} )
 
-	add_custom_target(
-		${FULL_PROJECT_NAME}
-		DEPENDS ${FULL_PROJECT_NAME}-package
-		)
+	if( NOT CMAKE_CROSSCOMPILING )
+		add_custom_target(
+			${FULL_PROJECT_NAME}
+			DEPENDS ${FULL_PROJECT_NAME}-package
+			)
+	else()
+		add_custom_target(
+			${FULL_PROJECT_NAME}
+			DEPENDS ${FULL_PROJECT_NAME}-make
+			)
+	endif()
 	set_property( TARGET ${FULL_PROJECT_NAME} PROPERTY FOLDER ${FULL_PROJECT_NAME} )
 
 	set_property( GLOBAL APPEND PROPERTY BUILD_TARGETS    ${FULL_PROJECT_NAME}          )
