@@ -83,11 +83,11 @@ endforeach()
 set( WPKG_CONTROL_FILE "${WPKG_ROOT}/var/lib/wpkg/core/control"      )
 set( WPKG_SOURCES_FILE "${WPKG_ROOT}/var/lib/wpkg/core/sources.list" )
 
-if( CMAKE_CROSSCOMPILING )
-    set( WPKG "${wpkg_static_BINARY_DIR}/wpkg_static${CMAKE_EXECUTABLE_SUFFIX}" )
-else()
+# if( CMAKE_CROSSCOMPILING )
+    # set( WPKG "${wpkg_static_BINARY_DIR}/wpkg_static${CMAKE_EXECUTABLE_SUFFIX}" )
+# else()
     set( WPKG "wpkg_static" )
-endif()
+# endif()
 
 add_custom_command(
         OUTPUT "${WPKG_CONTROL_FILE}"
