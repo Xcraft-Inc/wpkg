@@ -98,12 +98,14 @@ add_custom_command(
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 
+string( REPLACE "+" "%2B" SOURCES_ROOT ${WPKG_ROOT} )
+
 add_custom_command(
         OUTPUT "${WPKG_SOURCES_FILE}"
         COMMAND ${WPKG}
             --verbose
             --root "${WPKG_ROOT}"
-            --add-sources "wpkg file://${WPKG_ROOT}/packages/ ."
+            --add-sources "wpkg file://${SOURCES_ROOT}/packages/ ."
         DEPENDS "${WPKG_CONTROL_FILE}"
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
