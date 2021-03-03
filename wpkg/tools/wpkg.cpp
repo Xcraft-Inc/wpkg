@@ -3017,7 +3017,7 @@ void init_installer
 {
     init_manager(cl, manager, option);
 
-    const int max(cl.opt().size(option));
+    const int max(option == "upgrade" ? cl.size() : cl.opt().size(option));
     if(max == 0)
     {
         throw std::runtime_error("--" + option + " requires at least one parameter");
