@@ -162,6 +162,7 @@ elseif( MSVC )
 elseif( MINGW )
     set( WPKG_PROCESSOR amd64 )
     set( WPKG_OS mswindows )
+    set( BUILD_ARCH amd64 )
     # WIN_MACHINE_FLAGS cannot be empty and since cmake adds -fPIC under
     # our feet, that makes no difference at this point...
     set( WIN_MACHINE_FLAGS "-fPIC" )
