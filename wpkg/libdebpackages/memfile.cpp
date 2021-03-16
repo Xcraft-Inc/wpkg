@@ -857,8 +857,8 @@ void memory_file::disk_file_to_info(const wpkg_filename::uri_filename& filename,
         wpkg_output::log("I/O error while reading symbolic link '%1'.")
                 .quoted_arg(filename.original_filename())
             .level(wpkg_output::level_warning)
-            .debug(wpkg_output::debug_flags::debug_detail_files)
-            .module(wpkg_output::module_repository);
+            .module(wpkg_output::module_repository)
+            .action("file_to_info");
     }
 
     if(filename.os_stat(s) != 0)
