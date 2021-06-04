@@ -3281,7 +3281,7 @@ int uri_filename::os_stat(file_stat& s) const
             }
         }
 #else
-#ifdef MO_FREEBSD
+#if defined(MO_FREEBSD) || defined(__aarch64__)
         // stat is 64 bits by itself
         struct stat st;
         int r(::stat(cname.get_utf8().c_str(), &st));
@@ -3349,7 +3349,7 @@ int uri_filename::os_lstat(file_stat& s) const
     os_filename_t cname(os_filename());
 //::stat(cname.c_str(), st);
 //::fprintf(stderr, "really l-stating [%s] from [%s] %d (%d/%d)\n", cname.c_str(), f_original.c_str(), (st->st_mode & S_IFMT), S_IFDIR, S_IFREG);
-#ifdef MO_FREEBSD
+#if defined(MO_FREEBSD) || defined(__aarch64__)
     // stat is 64 bits by itself
     struct stat st;
     int r(::stat(cname.get_utf8().c_str(), &st));
