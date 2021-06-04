@@ -3352,7 +3352,7 @@ int uri_filename::os_lstat(file_stat& s) const
 #if defined(MO_FREEBSD) || defined(__aarch64__)
     // stat is 64 bits by itself
     struct stat st;
-    int r(::stat(cname.get_utf8().c_str(), &st));
+    int r(::lstat(cname.get_utf8().c_str(), &st));
 #else
     struct stat64 st;
     int r(::lstat64(cname.get_utf8().c_str(), &st));
