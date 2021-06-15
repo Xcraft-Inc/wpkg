@@ -796,7 +796,7 @@ public:
     }
 
 protected:
-    ZSTD_CStream* f_stream;
+    ZSTD_CCtx* f_cctx;
 };
 
 
@@ -815,15 +815,15 @@ public:
     {
         zstlevel = zstlevel * ZSTD_maxCLevel() / 9;
 
-        f_stream = ZSTD_createCCtx();
-        ZSTD_CCtx_setParameter(f_stream, ZSTD_c_compressionLevel, zstlevel);
-        ZSTD_CCtx_setParameter(f_stream, ZSTD_c_checksumFlag, 1);
-        ZSTD_CCtx_setParameter(f_stream, ZSTD_c_nbWorkers, 4);
+        f_cctx = ZSTD_createCCtx();
+        ZSTD_CCtx_setParameter(f_cctx, ZSTD_c_compressionLevel, zstlevel);
+        ZSTD_CCtx_setParameter(f_cctx, ZSTD_c_checksumFlag, 1);
+        ZSTD_CCtx_setParameter(f_cctx, ZSTD_c_nbWorkers, 4);
     }
 
     ~zst_deflate()
     {
-        check_error(ZSTD_freeCCtx(f_stream));
+        check_error(ZSTD_freeCCtx(f_cctx));
     }
 
     void compress(memory_file& result, const memory_file::block_manager& block)
@@ -854,7 +854,7 @@ public:
                 zout.dst = out;
                 zout.size = memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE;
                 zout.pos = 0;
-                const size_t remaining = ZSTD_compressStream2(f_stream, &zout, &zin, mode);
+                const size_t remaining = ZSTD_compressStream2(f_cctx, &zout, &zin, mode);
                 result.write(out, out_offset, zout.pos);
                 out_offset += zout.pos;
                 finished = lastChunk ? (remaining == 0) : (zin.pos == zin.size);
@@ -1514,7 +1514,7 @@ std::string memory_file::to_base64(const char *buf, size_t size)
                 chunk |= buf[i++] & 255;
             }
         }
-     
+
         // save 4 characters of output
         result += alphabet[chunk >> 18]; // & 0x3F not required because we do not have extra bits
         result += alphabet[(chunk >> 12) & 0x3F];
