@@ -1410,7 +1410,7 @@ memory_file::file_format_t memory_file::filename_extension_to_format(const wpkg_
     {
         format = file_format_bz2;
     }
-    else if(ext == "lzam")
+    else if(ext == "lzma")
     {
         // TODO: to fully support dpkg we need to support .lzma (from 7zip)
         format = file_format_lzma;
