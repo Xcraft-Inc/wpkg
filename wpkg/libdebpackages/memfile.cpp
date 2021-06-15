@@ -813,14 +813,15 @@ class zst_deflate : private zst_lib
 public:
     zst_deflate(int zstlevel)
     {
-        // compression level
-        f_stream = ZSTD_createCStream();
-        check_error(ZSTD_initCStream(f_stream, zstlevel));
+        f_stream = ZSTD_createCCtx();
+        ZSTD_CCtx_setParameter(f_stream, ZSTD_c_compressionLevel, zstlevel);
+        ZSTD_CCtx_setParameter(f_stream, ZSTD_c_checksumFlag, 1);
+        ZSTD_CCtx_setParameter(f_stream, ZSTD_c_nbWorkers, 4);
     }
 
     ~zst_deflate()
     {
-        check_error(ZSTD_freeCStream(f_stream));
+        check_error(ZSTD_freeCCtx(f_stream));
     }
 
     void compress(memory_file& result, const memory_file::block_manager& block)
@@ -833,25 +834,29 @@ public:
         int sz(block.size());
         while(sz > 0)
         {
-            ZSTD_outBuffer zout;
-            zout.dst = out;
-            zout.size = memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE;
-            zout.pos = 0;
-
             const int left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE));
             block.read(in, in_offset, left_used);
             sz -= left_used;
             in_offset += left_used;
 
+            const int lastChunk = sz <= 0;
+            ZSTD_EndDirective const mode = lastChunk ? ZSTD_e_end : ZSTD_e_continue;
+
             ZSTD_inBuffer zin;
             zin.src = in;
             zin.size = left_used;
-            for (zin.pos = 0; zin.pos != zin.size;) {
-                check_error(ZSTD_compressStream(f_stream, &zout, &zin));
-            }
-            check_error(ZSTD_endStream(f_stream, &zout));
-            result.write(static_cast<const char*>(zout.dst), out_offset, zout.pos);
-            out_offset += zout.pos;
+            zin.pos = 0;
+            int finished;
+            do {
+                ZSTD_outBuffer zout;
+                zout.dst = out;
+                zout.size = memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE;
+                zout.pos = 0;
+                const size_t remaining = ZSTD_compressStream2(f_stream, &zout, &zin, mode);
+                result.write(out, out_offset, zout.pos);
+                out_offset += zout.pos;
+                finished = lastChunk ? (remaining == 0) : (zin.pos == zin.size);
+            } while (!finished);
         }
         result.guess_format_from_data();
     }
