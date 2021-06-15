@@ -777,7 +777,7 @@ public:
 class zst_lib
 {
 public:
-    zst_lib()
+    zst_lib() : f_cctx(nullptr), f_dctx(nullptr)
     {
 
     }
@@ -791,12 +791,13 @@ public:
                 // use standard memory allocation failure exception
                 throw std::bad_alloc();
             }
-            throw memfile_exception_io("zst compression failed");
+            throw memfile_exception_io("zstd compression failed");
         }
     }
 
 protected:
     ZSTD_CCtx* f_cctx;
+    ZSTD_DCtx* f_dctx;
 };
 
 
@@ -875,18 +876,50 @@ class zst_inflate : private zst_lib
 public:
     zst_inflate()
     {
-        // no verbosity, default work factor
-        //check_error(BZ2_bzDecompressInit(&f_zstdstream, 0, 0));
+        f_dctx = ZSTD_createDCtx();
     }
 
     ~zst_inflate()
     {
-        //check_error(BZ2_bzDecompressEnd(&f_zstdstream));
+        check_error(ZSTD_freeDCtx(f_dctx));
     }
 
     void decompress(memory_file& result, const memory_file::block_manager& block)
     {
+        result.create(memory_file::file_format_other);
+        char out[1024 * 64]; // 64Kb like the block manager at this time
+        int out_offset(0);
+        char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
+        int in_offset(0);
+        int sz(block.size());
+        size_t lastRet = 0;
+        while(sz > 0)
+        {
+            const int left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE));
+            block.read(in, in_offset, left_used);
+            sz -= left_used;
+            in_offset += left_used;
 
+            ZSTD_inBuffer zin;
+            zin.src = in;
+            zin.size = left_used;
+            zin.pos = 0;
+            while(zin.pos < zin.size) {
+                ZSTD_outBuffer zout;
+                zout.dst = out;
+                zout.size = memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE;
+                zout.pos = 0;
+                const size_t ret = ZSTD_decompressStream(f_dctx, &zout , &zin);
+                result.write(out, out_offset, zout.pos);
+                out_offset += zout.pos;
+                lastRet = ret;
+            }
+        }
+        if(lastRet != 0)
+        {
+            throw memfile_exception_io("zstd decompression failed");
+        }
+        result.guess_format_from_data();
     }
 };
 
