@@ -813,6 +813,8 @@ class zst_deflate : private zst_lib
 public:
     zst_deflate(int zstlevel)
     {
+        zstlevel = zstlevel * ZSTD_maxCLevel() / 9;
+
         f_stream = ZSTD_createCCtx();
         ZSTD_CCtx_setParameter(f_stream, ZSTD_c_compressionLevel, zstlevel);
         ZSTD_CCtx_setParameter(f_stream, ZSTD_c_checksumFlag, 1);
