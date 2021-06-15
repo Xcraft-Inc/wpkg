@@ -226,6 +226,7 @@ endfunction()
 ## Libraries
 add_subdirectory( bzip2              )
 add_subdirectory( zlib               )
+add_subdirectory( zstd               )
 add_subdirectory( controlled_vars    )
 add_subdirectory( libtld             )
 add_subdirectory( libutf8            )
@@ -255,7 +256,7 @@ if( MSVC )
     set( PACKAGE_FOLDER package )
 endif()
 
-add_custom_target( package_prereqs DEPENDS bz2_target zlib_target tld_target utf8_target expr_target debpackages_target tools_target )
+add_custom_target( package_prereqs DEPENDS bz2_target zlib_target zstd_target tld_target utf8_target expr_target debpackages_target tools_target )
 
 if( MSVC )
     set_property( TARGET package_prereqs PROPERTY FOLDER ${PACKAGE_FOLDER} )
