@@ -859,7 +859,7 @@ public:
                 result.write(out, out_offset, zout.pos);
                 out_offset += zout.pos;
                 finished = lastChunk ? (remaining == 0) : (zin.pos == zin.size);
-            } while (!finished);
+            } while(!finished);
         }
         result.guess_format_from_data();
     }
