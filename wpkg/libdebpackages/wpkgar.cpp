@@ -571,6 +571,10 @@ void wpkgar_package::read_archive(memfile::memory_file& p, bool skip_data)
             compression = wpkgar::wpkgar_block_t::WPKGAR_COMPRESSION_XZ;
             break;
 
+        case memfile::memory_file::file_format_zst:
+            compression = wpkgar::wpkgar_block_t::WPKGAR_COMPRESSION_ZST;
+            break;
+
         default:
             // keep as is, not viewed as compressed
             break;
@@ -846,6 +850,11 @@ void wpkgar_package::read_control_file(memfile::memory_file& p, std::string& fil
         case wpkgar::wpkgar_block_t::WPKGAR_COMPRESSION_XZ:
             format = memfile::memory_file::file_format_xz;
             filename += ".xz";
+            break;
+
+        case wpkgar::wpkgar_block_t::WPKGAR_COMPRESSION_ZST:
+            format = memfile::memory_file::file_format_zst;
+            filename += ".zstd";
             break;
 
         default:

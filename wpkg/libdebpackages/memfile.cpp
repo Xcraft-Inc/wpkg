@@ -52,9 +52,12 @@
 #define BZ_IMPORT 1
 #define BZ_DLL 1
 #define ZLIB_DLL 1
+#define ZSTD_DLL 1
 #endif
 #include    "zlib.h"
 #include    "bzlib.h"
+#include    "zstd.h"
+#include    "zstd_errors.h"
 
 #include    <errno.h>
 #include    <stdlib.h>
@@ -765,6 +768,122 @@ public:
 };
 
 
+/** \brief Handling of the zstd compression format.
+ *
+ * This class is the base class for the zstd compressor and decompressor
+ * classes. It handles the errors in a common way and holds the
+ * zstd_stream buffer.
+ */
+class zst_lib
+{
+public:
+    zst_lib()
+    {
+
+    }
+
+    void check_error(int zsterr)
+    {
+        if(ZSTD_isError(zsterr))
+        {
+            const auto rc = ZSTD_getErrorCode(zsterr);
+            if(rc == ZSTD_error_memory_allocation) {
+                // use standard memory allocation failure exception
+                throw std::bad_alloc();
+            }
+            throw memfile_exception_io("zst compression failed");
+        }
+    }
+
+protected:
+    ZSTD_CStream* f_stream;
+};
+
+
+/** \brief Deflate class to compress zstd streams.
+ *
+ * This class is used to compress a stream of data using the zstd
+ * compressor.
+ *
+ * The compress() function is the one used to compress a set of input
+ * blocks in a resulting zstd compressed buffer.
+ */
+class zst_deflate : private zst_lib
+{
+public:
+    zst_deflate(int zstlevel)
+    {
+        // compression level
+        f_stream = ZSTD_createCStream();
+        check_error(ZSTD_initCStream(f_stream, zstlevel));
+    }
+
+    ~zst_deflate()
+    {
+        check_error(ZSTD_freeCStream(f_stream));
+    }
+
+    void compress(memory_file& result, const memory_file::block_manager& block)
+    {
+        result.create(memory_file::file_format_zst);
+        char out[1024 * 64]; // 64Kb like the block manager at this time
+        int out_offset(0);
+        char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
+        int in_offset(0);
+        int sz(block.size());
+        while(sz > 0)
+        {
+            ZSTD_outBuffer zout;
+            zout.dst = out;
+            zout.size = memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE;
+            zout.pos = 0;
+
+            const int left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE));
+            block.read(in, in_offset, left_used);
+            sz -= left_used;
+            in_offset += left_used;
+
+            ZSTD_inBuffer zin;
+            zin.src = in;
+            zin.size = left_used;
+            for (zin.pos = 0; zin.pos != zin.size;) {
+                check_error(ZSTD_compressStream(f_stream, &zout, &zin));
+            }
+            check_error(ZSTD_endStream(f_stream, &zout));
+            result.write(static_cast<const char*>(zout.dst), out_offset, zout.pos);
+            out_offset += zout.pos;
+        }
+        result.guess_format_from_data();
+    }
+};
+
+
+/** \brief Decompress a bz2 compressed buffer in memory.
+ *
+ * This class is used to decompress a buffer that was previously compressed
+ * with the bz2 compressor.
+ */
+class zst_inflate : private zst_lib
+{
+public:
+    zst_inflate()
+    {
+        // no verbosity, default work factor
+        //check_error(BZ2_bzDecompressInit(&f_zstdstream, 0, 0));
+    }
+
+    ~zst_inflate()
+    {
+        //check_error(BZ2_bzDecompressEnd(&f_zstdstream));
+    }
+
+    void decompress(memory_file& result, const memory_file::block_manager& block)
+    {
+
+    }
+};
+
+
 } // no name namespace
 
 
@@ -1169,6 +1288,12 @@ memory_file::file_format_t memory_file::data_to_format(const char *data, int buf
     if(bufsize >= 3 && data[0] == 'B' && data[1] == 'Z' && data[2] == 'h') {
         return file_format_bz2;
     }
+    if(bufsize >= 4 && static_cast<unsigned char>(data[0]) == 0x28
+    && static_cast<unsigned char>(data[1]) == 0xB5
+    && static_cast<unsigned char>(data[2]) == 0x2F
+    && static_cast<unsigned char>(data[3]) == 0xFD) {
+        return file_format_zst;
+    }
     if(bufsize >= 8 && data[0] == '!' && data[1] == '<' && data[2] == 'a'
     && data[3] == 'r' && data[4] == 'c' && data[5] == 'h' && data[6] == '>'
     && data[7] == 0x0A) {
@@ -1300,6 +1425,10 @@ memory_file::file_format_t memory_file::filename_extension_to_format(const wpkg_
         // we cannot throw here since this is used to check files going inside a
         // package as well and these could be compressed with xz
         //throw memfile_exception_compatibility("xz compression is not yet supported");
+    }
+    else if(ext == "zst")
+    {
+        format = file_format_zst;
     }
     if(format != file_format_other)
     {
@@ -1845,7 +1974,8 @@ int memory_file::compare(const memory_file& rhs) const
 bool memory_file::is_compressed() const
 {
     return f_format == file_format_gz || f_format == file_format_bz2
-        || f_format == file_format_lzma || f_format == file_format_xz;
+        || f_format == file_format_lzma || f_format == file_format_xz
+        || f_format == file_format_zst;
 }
 
 void memory_file::compress(memory_file& result, file_format_t format, int zlevel) const
@@ -1866,6 +1996,7 @@ void memory_file::compress(memory_file& result, file_format_t format, int zlevel
     case file_format_bz2:
     case file_format_lzma:
     case file_format_xz:
+    case file_format_zst:
         throw memfile_exception_compatibility("this memory file is already compressed");
 
     default:
@@ -1898,6 +2029,10 @@ void memory_file::compress(memory_file& result, file_format_t format, int zlevel
         compress_to_bz2(result, zlevel);
         break;
 
+    case file_format_zst:
+        compress_to_zst(result, zlevel);
+        break;
+
     // TODO add support for lzma and xz
     default:
         throw memfile_exception_compatibility("the output format must be a supported compressed format");
@@ -1918,6 +2053,10 @@ void memory_file::decompress(memory_file& result) const
 
     case file_format_bz2:
         decompress_from_bz2(result);
+        break;
+
+    case file_format_zst:
+        decompress_from_zst(result);
         break;
 
     // TODO add support for lzma and xz
@@ -2435,6 +2574,12 @@ void memory_file::compress_to_bz2(memory_file& result, int zlevel) const
     bz2.compress(result, f_buffer);
 }
 
+void memory_file::compress_to_zst(memory_file& result, int zlevel) const
+{
+    zst_deflate zst(zlevel);
+    zst.compress(result, f_buffer);
+}
+
 void memory_file::decompress_from_gz(memory_file& result) const
 {
     gz_inflate gz;
@@ -2451,6 +2596,12 @@ void memory_file::decompress_from_bz2(memory_file& result) const
 {
     bz2_inflate bz2;
     bz2.decompress(result, f_buffer);
+}
+
+void memory_file::decompress_from_zst(memory_file& result) const
+{
+    zst_inflate zst;
+    zst.decompress(result, f_buffer);
 }
 
 /** \brief Read information about a file from disk.

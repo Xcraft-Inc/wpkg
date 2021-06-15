@@ -2685,6 +2685,10 @@ command_line::command_line(int argc, char *argv[], std::vector<std::string> conf
             {
                 f_compressor = memfile::memory_file::file_format_lzma;
             }
+            else if(name == "zst" || name == "zstd")
+            {
+                f_compressor = memfile::memory_file::file_format_zst;
+            }
             else if(name == "none")
             {
                 f_compressor = memfile::memory_file::file_format_other;

@@ -79,7 +79,8 @@ struct DEBIAN_PACKAGE_EXPORT wpkgar_block_t
         WPKGAR_COMPRESSION_GZ,
         WPKGAR_COMPRESSION_BZ2,
         WPKGAR_COMPRESSION_LZMA,
-        WPKGAR_COMPRESSION_XZ
+        WPKGAR_COMPRESSION_XZ,
+        WPKGAR_COMPRESSION_ZST
     };
     enum wpkgar_usage_t {
         WPKGAR_USAGE_UNKNOWN = 0,

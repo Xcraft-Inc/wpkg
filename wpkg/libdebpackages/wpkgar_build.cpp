@@ -321,6 +321,7 @@ void wpkgar_build::set_compressor(memfile::memory_file::file_format_t compressor
     case memfile::memory_file::file_format_bz2:
     case memfile::memory_file::file_format_lzma:
     case memfile::memory_file::file_format_xz:
+    case memfile::memory_file::file_format_zst:
     case memfile::memory_file::file_format_best: // try them all and keep the smallest
         f_compressor = compressor;
         break;
@@ -4150,6 +4151,10 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
             info.set_filename("control.tar.xz");
             break;
 
+        case memfile::memory_file::file_format_zst:
+            info.set_filename("control.tar.zst");
+            break;
+
         default:
             throw wpkgar_exception_parameter("the compressed control file data has an unknown compressed format");
 
@@ -4185,6 +4190,10 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
 
         case memfile::memory_file::file_format_xz:
             info.set_filename("data.tar.xz");
+            break;
+
+        case memfile::memory_file::file_format_zst:
+            info.set_filename("data.tar.zst");
             break;
 
         default:
