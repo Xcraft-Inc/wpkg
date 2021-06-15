@@ -830,7 +830,8 @@ public:
     void compress(memory_file& result, const memory_file::block_manager& block)
     {
         result.create(memory_file::file_format_zst);
-        char out[1024 * 64]; // 64Kb like the block manager at this time
+        const size_t outSize = ZSTD_CStreamOutSize();
+        char out[outSize];
         int out_offset(0);
         char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
         int in_offset(0);
@@ -853,7 +854,7 @@ public:
             do {
                 ZSTD_outBuffer zout;
                 zout.dst = out;
-                zout.size = memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE;
+                zout.size = outSize;
                 zout.pos = 0;
                 const size_t remaining = ZSTD_compressStream2(f_cctx, &zout, &zin, mode);
                 result.write(out, out_offset, zout.pos);
@@ -887,7 +888,8 @@ public:
     void decompress(memory_file& result, const memory_file::block_manager& block)
     {
         result.create(memory_file::file_format_other);
-        char out[1024 * 64]; // 64Kb like the block manager at this time
+        const size_t outSize = ZSTD_CStreamOutSize();
+        char out[outSize];
         int out_offset(0);
         char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
         int in_offset(0);
@@ -907,7 +909,7 @@ public:
             while(zin.pos < zin.size) {
                 ZSTD_outBuffer zout;
                 zout.dst = out;
-                zout.size = memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE;
+                zout.size = outSize;
                 zout.pos = 0;
                 const size_t ret = ZSTD_decompressStream(f_dctx, &zout , &zin);
                 result.write(out, out_offset, zout.pos);
