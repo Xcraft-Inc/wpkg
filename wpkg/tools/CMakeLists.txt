@@ -52,6 +52,7 @@ include_directories(
     "${debpackages_SOURCE_DIR}"
     "${wpkg_bz2_SOURCE_DIR}"
     "${wpkg_z_SOURCE_DIR}"
+    "${wpkg_zstd_SOURCE_DIR}"
     "${expr_SOURCE_DIR}"
     "${utf8_SOURCE_DIR}"
     "${wpkg_tld_BINARY_DIR}"
@@ -73,6 +74,7 @@ target_link_libraries( ${PROJECT_NAME}
     expr
     wpkg_z
     wpkg_bz2
+    wpkg_zstd
 )
 
 install(
@@ -175,6 +177,7 @@ target_link_libraries( ${PROJECT_NAME}
     expr
     wpkg_z
     wpkg_bz2
+    wpkg_zstd
     wpkg_tld
 )
 
@@ -212,6 +215,7 @@ target_link_libraries( ${PROJECT_NAME}
     expr
     wpkg_z
     wpkg_bz2
+    wpkg_zstd
     wpkg_tld
 )
 
@@ -249,6 +253,7 @@ target_link_libraries( ${PROJECT_NAME}
     expr
     wpkg_z
     wpkg_bz2
+    wpkg_zstd
     wpkg_tld
 )
 
@@ -285,6 +290,7 @@ target_link_libraries( ${PROJECT_NAME}
     expr
     wpkg_z
     wpkg_bz2
+    wpkg_zstd
     wpkg_tld
 )
 
@@ -314,6 +320,7 @@ target_link_libraries( ${PROJECT_NAME}
     expr_static
     wpkg_z_static
     wpkg_bz2_static
+    wpkg_zstd_static
     wpkg_tld_static
 )
 

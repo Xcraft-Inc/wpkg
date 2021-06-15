@@ -63,6 +63,7 @@ set( DEBUG_LIBRARIES
 	debug wpkg_bz2_d
 	debug wpkg_tld_d
 	debug wpkg_z_d
+	debug wpkg_zstd_d
 	)
 set( RELEASE_LIBRARIES
 	optimized debpackages
@@ -71,6 +72,7 @@ set( RELEASE_LIBRARIES
 	optimized wpkg_bz2
 	optimized wpkg_tld
 	optimized wpkg_z
+	optimized wpkg_zstd
 	)
 
 if( CMAKE_BUILD_TYPE )

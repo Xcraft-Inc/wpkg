@@ -93,6 +93,7 @@ if( CATCH_FOUND )
         expr_static
         wpkg_z_static
         wpkg_bz2_static
+        wpkg_zstd_static
     )
 
 	set( TMPDIR "${CMAKE_BINARY_DIR}/tmp" )

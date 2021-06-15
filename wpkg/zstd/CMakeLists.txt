@@ -10,7 +10,6 @@ endif()
 
 set ( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DZSTD_MULTITHREAD" )
 
-# TODO: make zconf.h from zconf.h.cmakein
 set(ZSTD_PUBLIC_HDRS
     lib/zdict.h
     lib/zstd.h
@@ -30,6 +29,7 @@ add_library( ${PROJECT_NAME} STATIC
     lib/common/zstd_common.c
     lib/compress/fse_compress.c
     lib/compress/huf_compress.c
+    lib/compress/hist.c
     lib/compress/zstd_compress_literals.c
     lib/compress/zstd_compress_sequences.c
     lib/compress/zstd_compress_superblock.c
@@ -80,6 +80,7 @@ add_library( ${PROJECT_NAME} SHARED
     lib/common/zstd_common.c
     lib/compress/fse_compress.c
     lib/compress/huf_compress.c
+    lib/compress/hist.c
     lib/compress/zstd_compress_literals.c
     lib/compress/zstd_compress_sequences.c
     lib/compress/zstd_compress_superblock.c
@@ -103,7 +104,7 @@ add_library( ${PROJECT_NAME} SHARED
 if( MSVC )
     set_target_properties( ${PROJECT_NAME} PROPERTIES
         COMPILE_FLAGS
-        FOLDER ${ZLIB_FOLDER}
+        FOLDER ${ZSTD_FOLDER}
     )
 else()
     set_target_properties( ${PROJECT_NAME} PROPERTIES

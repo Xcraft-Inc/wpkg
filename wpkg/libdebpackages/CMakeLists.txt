@@ -49,6 +49,7 @@ endif()
 if( MSVC OR MO_MINGW32 OR MO_MINGW64 OR MSYS )
     set ( EXTRA_LIBRARIES wsock32 ws2_32 mpr ole32 uuid )
 endif()
+set ( EXTRA_LIBRARIES ${EXTRA_LIBRARIES} pthread )
 
 file( GLOB LIBDEBPACKAGES_INCLUDE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/libdebpackages/*.h" )
 
@@ -69,6 +70,7 @@ include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/.."
     "${wpkg_bz2_static_SOURCE_DIR}"
     "${wpkg_z_static_SOURCE_DIR}"
+    "${wpkg_zstd_static_SOURCE_DIR}/lib"
     "${expr_static_SOURCE_DIR}"
     "${expr_static_BINARY_DIR}"
     "${utf8_static_SOURCE_DIR}"
@@ -134,6 +136,7 @@ target_link_libraries( ${PROJECT_NAME}
     expr_static
     wpkg_z_static
     wpkg_bz2_static
+    wpkg_zstd_static
     wpkg_tld_static
     ${EXTRA_LIBRARIES}
 )
@@ -170,6 +173,7 @@ include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/.."
     "${wpkg_bz2_SOURCE_DIR}"
     "${wpkg_z_SOURCE_DIR}"
+    "${wpkg_zstd_SOURCE_DIR}/lib"
     "${expr_SOURCE_DIR}"
     "${utf8_SOURCE_DIR}"
 )
@@ -193,6 +197,7 @@ target_link_libraries( ${PROJECT_NAME}
     expr
     wpkg_z
     wpkg_bz2
+    wpkg_zstd
     wpkg_tld
     ${EXTRA_LIBRARIES}
 )
