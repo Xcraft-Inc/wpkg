@@ -2062,6 +2062,11 @@ void wpkgar_build::build_source()
     std::string source_dir(plain_package + "_" + wpkg_util::canonicalize_version_for_filename(version));
     std::string source(source_dir + ".tar.gz");
     wpkg_filename::uri_filename source_file(build_tmpdir.append_child(source));
+    if(!source_file.exists())
+    {
+        source = source_dir + ".tar.zst";
+        source_file = build_tmpdir.append_child(source);
+    }
 
     // finally create the debian package
     memfile::memory_file debian_ar;
