@@ -1156,7 +1156,7 @@ const advgetopt::getopt::option wpkg_options[] =
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
         "compressor",
         "gzip",
-        "type of compression to use (gzip, bzip2, lzma, xz, none); default is best available",
+        "type of compression to use (gzip, bzip2, lzma, xz, zstd, none); default is best available",
         advgetopt::getopt::required_argument
     },
     {
@@ -2663,7 +2663,7 @@ command_line::command_line(int argc, char *argv[], std::vector<std::string> conf
     // compression level (1-9)
     f_zlevel = f_opt.get_long("zlevel", 0, 1, 9);
 
-    // compressor name (none, best, gzip, bzip2, xz, lzma)
+    // compressor name (none, best, gzip, bzip2, xz, lzma, zstd)
     if(f_opt.is_defined("compressor"))
     {
         std::string name(f_opt.get_string("compressor"));
