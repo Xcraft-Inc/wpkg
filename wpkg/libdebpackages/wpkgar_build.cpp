@@ -2961,6 +2961,28 @@ void wpkgar_build::build_repository()
                         cmd += " --cmake-generator ";
                         cmd += wpkg_util::make_safe_console_string(f_cmake_generator);
                     }
+                    cmd += " --compressor ";
+                    switch(f_compressor)
+                    {
+                    default:
+                    case memfile::memory_file::file_format_gz:
+                        cmd += "gz";
+                        break;
+                    case memfile::memory_file::file_format_bz2:
+                        cmd += "bz2";
+                        break;
+                    case memfile::memory_file::file_format_lzma:
+                        cmd += "lzma";
+                        break;
+                    case memfile::memory_file::file_format_xz:
+                        cmd += "xz";
+                        break;
+                    case memfile::memory_file::file_format_zst:
+                        cmd += "zst";
+                        break;
+                    }
+                    cmd += " --zlevel ";
+                    cmd += f_zlevel;
 
                     // keep the same debug flags for sub-calls
                     cmd += " --debug ";
