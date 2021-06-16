@@ -2175,7 +2175,7 @@ void wpkgar_build::build_source()
         }
     }
     data.end_archive();
-    data.compress(source_tar_gz, memfile::memory_file::file_format_gz, 9);
+    data.compress(source_tar_gz, f_compressor, f_zlevel);
 
     // now create the control_tar file with the control file
     memfile::memory_file control_tar;
