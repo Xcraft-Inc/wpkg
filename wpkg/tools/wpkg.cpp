@@ -2695,7 +2695,7 @@ command_line::command_line(int argc, char *argv[], std::vector<std::string> conf
             }
             else
             {
-                f_opt.usage(advgetopt::getopt::error, "supported compressors: gzip, bzip2, lzma, xz, none");
+                f_opt.usage(advgetopt::getopt::error, "supported compressors: gzip, bzip2, lzma, xz, zstd, none");
                 /*NOTREACHED*/
             }
         }
