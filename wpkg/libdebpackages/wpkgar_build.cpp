@@ -2582,6 +2582,8 @@ void wpkgar_build::build_project_packages()
     info.set_extra_path(install_tmpdir);
     info.set_output_repository_dir(f_output_repository_dir);
     info.set_output_dir(f_output_dir);
+    info.set_compressor(f_compressor);
+    info.set_zlevel(f_zlevel);
     info.build_info();
 }
 
