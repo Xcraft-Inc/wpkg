@@ -2982,7 +2982,9 @@ void wpkgar_build::build_repository()
                         break;
                     }
                     cmd += " --zlevel ";
-                    cmd += f_zlevel;
+                    std::stringstream zlevel;
+                    zlevel << f_zlevel;
+                    cmd += zlevel.str();
 
                     // keep the same debug flags for sub-calls
                     cmd += " --debug ";
