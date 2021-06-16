@@ -1629,7 +1629,7 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
             throw memfile_exception_io("cannot open \"" + filename.original_filename() + "\" for reading from current working directory \"" + cwd.os_filename().get_utf8() + "\"");
         }
         file.seek(0, wpkg_stream::fstream::end);
-        int file_size(static_cast<int>(file.tell()));
+        wpkg_stream::fstream::off_type file_size(file.tell());
         if(file_size < 0 || !file.good())
         {
             throw memfile_exception_io("invalid file size while reading the file");
@@ -1645,11 +1645,12 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
 
             // read per block (at most) to avoid allocating a really big buffer
             char buf[block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-            int sz(file_size);
+            wpkg_stream::fstream::off_type sz(file_size);
             int pos(0);
             while(sz > 0)
             {
-                int read_size(std::min(sz, block_manager::BLOCK_MANAGER_BUFFER_SIZE));
+                wpkg_stream::fstream::off_type blockSize(block_manager::BLOCK_MANAGER_BUFFER_SIZE);
+                int read_size(std::min(sz, blockSize));
                 file.read(buf, read_size);
                 if(!file.good())
                 {
