@@ -364,6 +364,10 @@ int dar(int argc, char *argv[])
                                 printf("[.xz]");
                                 break;
 
+                            case wpkgar::wpkgar_block_t::WPKGAR_COMPRESSION_ZST:
+                                printf("[.zst]");
+                                break;
+
                             case wpkgar::wpkgar_block_t::WPKGAR_COMPRESSION_NONE:
                                 // no default extension
                                 break;
@@ -461,6 +465,7 @@ int dar(int argc, char *argv[])
         case memfile::memory_file::file_format_bz2:
         case memfile::memory_file::file_format_lzma:
         case memfile::memory_file::file_format_xz:
+        case memfile::memory_file::file_format_zst:
             {
                 memfile::memory_file compressed;
                 dar.compress(compressed, format);

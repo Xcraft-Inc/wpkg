@@ -4260,6 +4260,7 @@ void create_index(command_line& cl)
     case memfile::memory_file::file_format_bz2:
     case memfile::memory_file::file_format_lzma:
     case memfile::memory_file::file_format_xz:
+    case memfile::memory_file::file_format_zst:
         {
             memfile::memory_file compressed;
             index.compress(compressed, format);
@@ -4731,6 +4732,7 @@ void compress(command_line& cl)
         case memfile::memory_file::file_format_bz2:
         case memfile::memory_file::file_format_lzma:
         case memfile::memory_file::file_format_xz:
+        case memfile::memory_file::file_format_zst:
             {
                 wpkg_filename::uri_filename old_filename;
                 wpkg_filename::uri_filename new_filename;
@@ -4767,6 +4769,10 @@ void compress(command_line& cl)
 
                         case memfile::memory_file::file_format_xz:
                             new_filename.set_filename(filename.full_path() + ".xz");
+                            break;
+
+                        case memfile::memory_file::file_format_zst:
+                            new_filename.set_filename(filename.full_path() + ".zst");
                             break;
 
                         default:
@@ -4858,6 +4864,7 @@ void decompress(command_line& cl)
         case memfile::memory_file::file_format_bz2:
         case memfile::memory_file::file_format_lzma:
         case memfile::memory_file::file_format_xz:
+        case memfile::memory_file::file_format_zst:
             {
                 wpkg_filename::uri_filename dir(filename.dirname());
                 wpkg_filename::uri_filename new_filename(output.empty() ? dir.append_child(filename.basename(true)) : output);

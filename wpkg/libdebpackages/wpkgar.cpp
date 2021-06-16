@@ -854,7 +854,7 @@ void wpkgar_package::read_control_file(memfile::memory_file& p, std::string& fil
 
         case wpkgar::wpkgar_block_t::WPKGAR_COMPRESSION_ZST:
             format = memfile::memory_file::file_format_zst;
-            filename += ".zstd";
+            filename += ".zst";
             break;
 
         default:
