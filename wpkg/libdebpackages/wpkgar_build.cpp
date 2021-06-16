@@ -2226,7 +2226,25 @@ void wpkgar_build::build_source()
         memfile::memory_file::file_info info;
         //memfile::memory_file data_tar_gz;
         //data_tar_gz.read_file(source_file);
-        info.set_filename("data.tar.gz");
+        switch(f_compressor)
+        {
+        default:
+        case memfile::memory_file::file_format_gz:
+            info.set_filename("data.tar.gz");
+            break;
+        case memfile::memory_file::file_format_bz2:
+            info.set_filename("data.tar.bz2");
+            break;
+        case memfile::memory_file::file_format_lzma:
+            info.set_filename("data.tar.lzma");
+            break;
+        case memfile::memory_file::file_format_xz:
+            info.set_filename("data.tar.xz");
+            break;
+        case memfile::memory_file::file_format_zst:
+            info.set_filename("data.tar.zst");
+            break;
+        }
         info.set_mode(0444);
         info.set_user("Administrator");
         info.set_group("Administrators");
