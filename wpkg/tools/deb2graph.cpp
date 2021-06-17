@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
         {
             printf("Package \"%s\" loaded.\n", package_filename.c_str());
         }
-        manager.load_package(package_filename);
+        manager.load_package(package_filename, false, true);
         std::string package(manager.get_field(package_filename, "Package"));
         package_info_t info;
         info.f_package = package;
