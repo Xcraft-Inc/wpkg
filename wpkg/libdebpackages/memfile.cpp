@@ -831,7 +831,7 @@ public:
     {
         result.create(memory_file::file_format_zst);
         const int64_t outSize = ZSTD_CStreamOutSize();
-        auto out = std::make_shared<char[]>(outSize);
+        auto out = std::vector<char>(outSize);
         int64_t out_offset(0);
         char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
         int64_t in_offset(0);
@@ -853,11 +853,11 @@ public:
             int finished;
             do {
                 ZSTD_outBuffer zout;
-                zout.dst = out.get();
+                zout.dst = out.data();
                 zout.size = outSize;
                 zout.pos = 0;
                 const int64_t remaining = ZSTD_compressStream2(f_cctx, &zout, &zin, mode);
-                result.write(out.get(), out_offset, zout.pos);
+                result.write(out.data(), out_offset, zout.pos);
                 out_offset += zout.pos;
                 finished = lastChunk ? (remaining == 0) : (zin.pos == zin.size);
             } while(!finished);
@@ -889,7 +889,7 @@ public:
     {
         result.create(memory_file::file_format_other);
         const int64_t outSize = ZSTD_CStreamOutSize();
-        auto out = std::make_shared<char[]>(outSize);
+        auto out = std::vector<char>(outSize);
         int64_t out_offset(0);
         char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
         int64_t in_offset(0);
@@ -908,11 +908,11 @@ public:
             zin.pos = 0;
             while(zin.pos < zin.size) {
                 ZSTD_outBuffer zout;
-                zout.dst = out.get();
+                zout.dst = out.data();
                 zout.size = outSize;
                 zout.pos = 0;
                 const int64_t ret = ZSTD_decompressStream(f_dctx, &zout , &zin);
-                result.write(out.get(), out_offset, zout.pos);
+                result.write(out.data(), out_offset, zout.pos);
                 out_offset += zout.pos;
                 lastRet = ret;
             }
