@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
 
     // start creating the .dot file
     dot.create(memfile::memory_file::file_format_other);
-    dot.printf("digraph {\nrankdir=BT;\nlabel=\"Debian Package Dependency Graph\";\n");
+    dot.printf("digraph {\nrankdir=LR;\nlabel=\"Debian Package Dependency Graph\";\n");
 
     node_names_t nodes;
     node_names_t deps; // dependencies not found on the command line
