@@ -297,6 +297,10 @@ int main(int argc, char *argv[])
     // use the dependency fields to define all the nodes of the graph
     dot.printf("edge [style=dashed];\n");
     add_nodes(nodes, deps, "Build-Depends");
+    dot.printf("edge [style=dashed,color=\"#008624\"];\n");
+    add_nodes(nodes, deps, "X-Craft-Build-Depends");
+    dot.printf("edge [style=dashed,color=\"#00677d\"];\n");
+    add_nodes(nodes, deps, "X-Craft-Make-Depends");
     dot.printf("edge [style=bold,color=\"#8888ff\"];\n");
     add_nodes(nodes, deps, "Pre-Depends");
     dot.printf("edge [style=solid,color=\"#aaaaaa\"];\n");
