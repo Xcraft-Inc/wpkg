@@ -327,7 +327,7 @@ private:
     memory_file& operator = (memory_file&);
     void compress_to_gz(memory_file& result, int zlevel) const;
     void compress_to_bz2(memory_file& result, int zlevel) const;
-    void compress_to_zst(memory_file& result, int zelevel) const;
+    void compress_to_zst(memory_file& result, int zlevel) const;
     void decompress_from_gz(memory_file& result) const;
     void decompress_from_bz2(memory_file& result) const;
     void decompress_from_zst(memory_file& result) const;
