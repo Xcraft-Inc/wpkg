@@ -843,7 +843,7 @@ public:
             sz -= left_used;
             in_offset += left_used;
 
-            const int lastChunk = sz <= 0;
+            const bool lastChunk = sz <= 0;
             ZSTD_EndDirective const mode = lastChunk ? ZSTD_e_end : ZSTD_e_continue;
 
             ZSTD_inBuffer zin;
