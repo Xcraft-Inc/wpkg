@@ -24,8 +24,8 @@
  *
  * The dar tool can be used to read and generate archives of all the
  * different types supported by wpkg. This includes tar, ar, and wpkgar.
- * It also supports the different compressions, which at this point are gz
- * and bz2.
+ * It also supports the different compressions, which at this point are gz,
+ * bz2 and zst.
  *
  * There is much to do to ameliorate and make this tool much more user
  * friendly than it currently is.
