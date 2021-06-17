@@ -380,7 +380,7 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
         }
         memfile::memory_file conf;
         conf.read_file(filename);
-        int offset(0);
+        int64_t offset(0);
         std::string str;
         int line(0);
         while(conf.read_line(offset, str))

@@ -73,8 +73,8 @@ public:
         const memfile::memory_file& f_input;
         std::string                 f_last_line;
         controlled_vars::zint32_t   f_space_count;
-        int                         f_offset; // cannot use a controlled var.
-        controlled_vars::zint32_t   f_previous_offset;
+        int64_t                     f_offset; // cannot use a controlled var.
+        controlled_vars::zint64_t   f_previous_offset;
         controlled_vars::zint32_t   f_line;
         controlled_vars::fbool_t    f_has_empty_line;
     };

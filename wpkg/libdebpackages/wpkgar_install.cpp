@@ -473,7 +473,7 @@ void wpkgar_install::package_item_t::copy_package_in_database()
         const wpkg_filename::uri_filename destination(dir.append_child("md5sums.wpkg-old"));
         wpkg_filename::uri_filename::file_stat s;
         destination.os_stat(s);
-        info.set_size(static_cast<int>(s.get_size()));
+        info.set_size(s.get_size());
         memfile::memory_file data;
         wpkgar_file_out.append_file(info, data);
     }

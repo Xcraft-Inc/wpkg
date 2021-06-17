@@ -649,7 +649,7 @@ void package_to_html(const wpkg_filename::uri_filename& output_directory, const 
             else
             {
                 char buf[32];
-                snprintf(buf, sizeof(buf), " %7d", info.get_size());
+                snprintf(buf, sizeof(buf), " %7ld", info.get_size());
                 buf[(sizeof(buf) / sizeof(buf[0])) - 1] = '\0';
                 files_list += buf;
             }

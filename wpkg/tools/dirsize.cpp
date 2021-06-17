@@ -162,30 +162,30 @@ int main(int argc, char *argv[])
     // user defined value or the default (512)
     int blocksize(static_cast<int>(opt.get_long("blocksize")));
 
-    int total_size(0);
-    int total_disk_size(0);
+    int64_t total_size(0);
+    int64_t total_disk_size(0);
     memfile::memory_file m;
     for(int i(0); i < max; ++i) {
         std::string path(opt.get_string("package", i));
-        int disk_size;
-        int size(m.dir_size(path, disk_size, blocksize));
+        int64_t disk_size;
+        int64_t size(m.dir_size(path, disk_size, blocksize));
         total_size += size;
         total_disk_size += disk_size;
         if(!opt.is_defined("total")) {
             if(opt.is_defined("sizeonly")) {
-                printf("%d\n", size);
+                printf("%ld\n", size);
             }
             else {
-                printf("%s %d %d\n", path.c_str(), size, disk_size);
+                printf("%s %ld %ld\n", path.c_str(), size, disk_size);
             }
         }
     }
     if(max > 1) {
         if(opt.is_defined("sizeonly")) {
-            printf("%d\n", total_size);
+            printf("%ld\n", total_size);
         }
         else {
-            printf("total %d %d\n", total_size, total_disk_size);
+            printf("total %ld %ld\n", total_size, total_disk_size);
         }
     }
 

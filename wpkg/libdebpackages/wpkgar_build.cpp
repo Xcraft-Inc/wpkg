@@ -465,7 +465,7 @@ bool wpkgar_build::load_build_number(int& build_number, bool quiet) const
 
     memfile::memory_file file;
     file.read_file(f_build_number_filename);
-    int offset(0);
+    int64_t offset(0);
     std::string line;
     if(file.read_line(offset, line))
     {
@@ -3254,7 +3254,7 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
         }
         memfile::memory_file substvars;
         substvars.read_file(substvars_name);
-        int offset(0);
+        int64_t offset(0);
         std::string fv;
         while(substvars.read_line(offset, fv))
         {
@@ -3843,7 +3843,7 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
         conffiles.create(memfile::memory_file::file_format_other);
         memfile::memory_file in_conffiles;
         in_conffiles.read_file(conffiles_name);
-        int offset(0);
+        int64_t offset(0);
         std::string conf_filename;
         while(in_conffiles.read_line(offset, conf_filename))
         {
@@ -3862,7 +3862,7 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
             {
                 throw wpkgar_exception_invalid("configuration filenames cannot end with a slash (/) as it only supports regular files");
             }
-            conffiles.write((n + "\n").c_str(), static_cast<int>(conffiles.size()), static_cast<int>(n.size() + 1));
+            conffiles.write((n + "\n").c_str(), conffiles.size(), n.size() + 1);
             n = n.substr(1);
             std::map<case_insensitive::case_insensitive_string, memfile::memory_file::file_info>::const_iterator found_it(found.find(n));
             if(found_it == found.end())

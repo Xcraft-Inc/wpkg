@@ -233,7 +233,7 @@ private:
 
     // current state while reading an input file
     controlled_vars::ptr_auto_init<const memfile::memory_file>  f_input;
-    controlled_vars::zint32_t           f_offset;
+    controlled_vars::zint64_t           f_offset;
     controlled_vars::zint32_t           f_line;
     mutable controlled_vars::zint32_t   f_errcnt;
     std::string                         f_filename;

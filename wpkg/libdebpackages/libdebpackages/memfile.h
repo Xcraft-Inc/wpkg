@@ -141,7 +141,7 @@ public:
         int get_gid() const;
         int get_mode() const;
         std::string get_mode_flags() const;
-        int get_size() const;
+        int64_t get_size() const;
         time_t get_mtime() const;
         time_t get_ctime() const;
         time_t get_atime() const;
@@ -168,8 +168,8 @@ public:
         void set_gid(const char *g, int max_size, int base);
         void set_mode(int mode);
         void set_mode(const char *m, int max_size, int base);
-        void set_size(int size);
-        void set_size(const char *s, int max_size, int base);
+        void set_size(int64_t size);
+        void set_size(const char *s, int64_t max_size, int base);
         void set_mtime(time_t mtime);
         void set_mtime(const char *t, int max_size, int base);
         void set_ctime(time_t ctime);
@@ -185,7 +185,8 @@ public:
 
         static int strnlen(const char *s, int n);
         static int str_to_int(const char *s, int n, int base);
-        static void int_to_str(char *d, uint32_t value, int len, int base, char fill);
+        static int64_t str_to_int64(const char *s, int64_t n, int base);
+        static void int_to_str(char *d, uint64_t value, int len, int base, char fill);
 
     private:
         wpkg_filename::uri_filename  f_uri;
@@ -199,7 +200,7 @@ public:
         int                     f_uid;
         int                     f_gid;
         int                     f_mode;
-        int                     f_size;
+        int64_t                 f_size;
         time_t                  f_mtime;
         time_t                  f_atime;
         time_t                  f_ctime;
@@ -240,26 +241,26 @@ public:
     public:
         // the block manager needs buffers that are at least 1Kb in size to
         // properly work with all the possible optimizations (i.e. 10 bits)
-        static const int BLOCK_MANAGER_BUFFER_BITS = 16; // 16 bits represents buffers of 64Kb
-        static const int BLOCK_MANAGER_BUFFER_SIZE = (1 << BLOCK_MANAGER_BUFFER_BITS);
+        static const int64_t BLOCK_MANAGER_BUFFER_BITS = 16; // 16 bits represents buffers of 64Kb
+        static const int64_t BLOCK_MANAGER_BUFFER_SIZE = (1 << BLOCK_MANAGER_BUFFER_BITS);
 
         block_manager();
         ~block_manager();
 
         void clear();
-        int size() const { return f_size; }
-        int read(char *buffer, int offset, int size) const;
-        int write(const char *buffer, int offset, int size);
+        int64_t size() const { return f_size; }
+        int64_t read(char *buffer, int64_t offset, int64_t size) const;
+        int64_t write(const char *buffer, int64_t offset, int64_t size);
         int compare(const block_manager& rhs) const;
 
-        file_format_t data_to_format(int offset, int size) const;
+        file_format_t data_to_format(int64_t offset, int64_t size) const;
 
     private:
         typedef std::vector<char>           buffer_t;
         typedef std::vector<buffer_t>       buffer_list_t;
 
-        controlled_vars::zint32_t           f_size;
-        controlled_vars::zint32_t           f_available_size;
+        controlled_vars::zint64_t           f_size;
+        controlled_vars::zint64_t           f_available_size;
         buffer_list_t                       f_buffers;
     };
 
@@ -279,7 +280,7 @@ public:
     void guess_format_from_data();
     file_format_t get_format() const;
     bool is_text() const;
-    static file_format_t data_to_format(const char *data, int size);
+    static file_format_t data_to_format(const char *data, int64_t size);
     static file_format_t filename_extension_to_format(const wpkg_filename::uri_filename& filename, bool ignore_compression = false);
     static std::string to_base64(const char *buf, size_t size);
 
@@ -298,19 +299,19 @@ public:
     void reset();
     void create(file_format_t format);
     void end_archive();
-    int read(char *buffer, int offset, int bufsize) const;
-    bool read_line(int& offset, std::string& result) const;
-    int write(const char *buffer, const int offset, const int bufsize);
+    int64_t read(char *buffer, int64_t offset, int64_t bufsize) const;
+    bool read_line(int64_t& offset, std::string& result) const;
+    int64_t write(const char *buffer, const int64_t offset, const int64_t bufsize);
     void printf(const char *format, ...);
     void append_file(const file_info& info, const memory_file& data);
-    int size() const;
+    int64_t size() const;
 
     // access files in 'ar', 'tar', 'zip', '7z', or 'wpkgar' archives
     // as well as disk directories
     void dir_rewind(const wpkg_filename::uri_filename& path = wpkg_filename::uri_filename(), bool recursive = true);
-    int dir_pos() const;
+    int64_t dir_pos() const;
     bool dir_next(file_info& info, memory_file *data = NULL) const;
-    int dir_size(const wpkg_filename::uri_filename& path, int& disk_size, int block_size = 512);
+    int64_t dir_size(const wpkg_filename::uri_filename& path, int64_t& disk_size, int block_size = 512);
     void set_package_path(const wpkg_filename::uri_filename& path);
     static void disk_file_to_info(const wpkg_filename::uri_filename& filename, file_info& info);
     static void info_to_disk_file(const wpkg_filename::uri_filename& filename, const file_info& info, int& err);
@@ -348,10 +349,10 @@ private:
     controlled_vars::fbool_t                    f_loaded;
     controlled_vars::fbool_t                    f_directory;
     controlled_vars::tbool_t                    f_recursive;
-    controlled_vars::zint32_t                   f_dir_size;
+    controlled_vars::zint64_t                   f_dir_size;
     mutable std::shared_ptr<wpkg_filename::os_dir>   f_dir;
     mutable std::vector<std::shared_ptr<wpkg_filename::os_dir> >  f_dir_stack;
-    mutable controlled_vars::zint32_t           f_dir_pos;
+    mutable controlled_vars::zint64_t           f_dir_pos;
     block_manager                               f_buffer;
     wpkg_filename::uri_filename                 f_package_path;
 };

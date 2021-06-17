@@ -4980,7 +4980,7 @@ void contents(command_line& cl)
             }
             else
             {
-                printf(" %7d", info.get_size());
+                printf(" %7ld", info.get_size());
             }
             printf("  %s %c%s",
                 info.get_date().c_str(),
@@ -5087,7 +5087,7 @@ void copyright(command_line& cl)
         {
             memfile::memory_file data;
             data.read_file(copyright_filename);
-            int offset(0);
+            int64_t offset(0);
             std::string line;
             while(data.read_line(offset, line))
             {
@@ -5123,7 +5123,7 @@ void copyright(command_line& cl)
             if(copyright_filename == filename.c_str())
             {
                 // found the file, print it in stdout
-                int offset(0);
+                int64_t offset(0);
                 std::string line;
                 while(data.read_line(offset, line))
                 {
@@ -5599,7 +5599,7 @@ void info(command_line& cl)
         else if(max == 0)
         {
             printf(" new debian package, version 2.0\n");
-            printf(" size %d bytes: control archive= %d bytes (%d uncompressed).\n", size, p.size(), ctrl.size());
+            printf(" size %d bytes: control archive= %ld bytes (%ld uncompressed).\n", size, p.size(), ctrl.size());
         }
     }
 
@@ -5656,7 +5656,7 @@ void info(command_line& cl)
                         if(filename == cl.argument(i))
                         {
                             // just print the file in the output
-                            int offset(0);
+                            int64_t offset(0);
                             std::string line;
                             while(data.read_line(offset, line))
                             {
@@ -5673,7 +5673,7 @@ void info(command_line& cl)
                     int count(0);
                     std::string cmd;
                     std::string line;
-                    int offset(0);
+                    int64_t offset(0);
                     if(data.read_line(offset, line))
                     {
                         ++count;
@@ -5712,7 +5712,7 @@ void info(command_line& cl)
                     // print result
                     if(!cl.quiet() && !print_avail)
                     {
-                        printf(" %7d bytes, %5d lines   %c  %-21s%s\n",
+                        printf(" %7ld bytes, %5d lines   %c  %-21s%s\n",
                                 data.size(), count, type, filename.c_str(), cmd.c_str());
                     }
                 }
@@ -5740,7 +5740,7 @@ void info(command_line& cl)
     {
         if(max == 0)
         {
-            int offset(0);
+            int64_t offset(0);
             std::string line;
             while(control_info_file.read_line(offset, line))
             {
@@ -6199,7 +6199,7 @@ void list_index_packages(command_line& cl)
 
         for(wpkgar::wpkgar_repository::entry_vector_t::const_iterator it(entries.begin()); it != entries.end(); ++it)
         {
-            printf("%7d  %s  %s\n",
+            printf("%7ld  %s  %s\n",
                  it->f_info.get_size(),
                  it->f_info.get_date().c_str(),
                  it->f_info.get_filename().c_str());

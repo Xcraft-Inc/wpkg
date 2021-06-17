@@ -744,7 +744,7 @@ void wpkgar_package::read_control(memfile::memory_file& p)
         memfile::memory_file status;
         std::string status_field("X-Status: unknown\n");
         status.create(memfile::memory_file::file_format_other);
-        status.write(status_field.c_str(), 0, static_cast<int>(status_field.length()));
+        status.write(status_field.c_str(), 0, status_field.length());
         memfile::memory_file::file_info info;
         info.set_filename("wpkg-status");
         info.set_file_type(memfile::memory_file::file_info::regular_file);
@@ -887,7 +887,7 @@ bool wpkgar_package::load_conffiles()
         f_wpkgar_file.read(reinterpret_cast<char *>(&header), it->second->get_offset(), sizeof(header));
         memfile::memory_file c;
         c.read_file(f_package_path.append_child("conffiles"));
-        int offset(0);
+        int64_t offset(0);
         std::string confname;
         while(c.read_line(offset, confname))
         {
@@ -1065,7 +1065,7 @@ void wpkgar_manager::create_database(const wpkg_filename::uri_filename& ctrl_fil
     memfile::memory_file status;
     std::string status_field("X-Status: ready\n");
     status.create(memfile::memory_file::file_format_other);
-    status.write(status_field.c_str(), 0, static_cast<int>(status_field.length()));
+    status.write(status_field.c_str(), 0, status_field.length());
     //memfile::memory_file::file_info info;
     info.set_filename("wpkg-status");
     info.set_file_type(memfile::memory_file::file_info::regular_file);

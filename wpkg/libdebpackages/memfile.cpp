@@ -96,8 +96,8 @@ namespace memfile
 
 #ifndef _MSC_VER
 // somehow g++ has problems with those in some cases
-const int                               memory_file::block_manager::BLOCK_MANAGER_BUFFER_BITS; // init in class
-const int                               memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE; // init in class
+const int64_t                           memory_file::block_manager::BLOCK_MANAGER_BUFFER_BITS; // init in class
+const int64_t                           memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE; // init in class
 
 const int                               memory_file::file_info_throw; // init in class
 const int                               memory_file::file_info_return_errors; // init in class
@@ -248,7 +248,7 @@ void memory_file::block_manager::clear()
     f_available_size = 0;
 }
 
-int memory_file::block_manager::read(char *buffer, int offset, int bufsize) const
+int64_t memory_file::block_manager::read(char *buffer, int64_t offset, int64_t bufsize) const
 {
     if(offset < 0 || offset > f_size)
     {
@@ -261,16 +261,16 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
     if(bufsize > 0)
     {
         // copy bytes between offset and next block boundary
-        int pos(offset & (BLOCK_MANAGER_BUFFER_SIZE - 1));
-        int page(offset >> BLOCK_MANAGER_BUFFER_BITS);
-        int sz(std::min(bufsize, BLOCK_MANAGER_BUFFER_SIZE - pos));
+        int64_t pos(offset & (BLOCK_MANAGER_BUFFER_SIZE - 1));
+        int64_t page(offset >> BLOCK_MANAGER_BUFFER_BITS);
+        int64_t sz(std::min(bufsize, BLOCK_MANAGER_BUFFER_SIZE - pos));
         {
             const auto bufpos = f_buffers[page].begin() + pos;
             std::copy( bufpos , bufpos + sz , buffer );
         }
         buffer += sz;
         // copy full pages at once unless size left is less than a page
-        int size_left(bufsize - sz);
+        int64_t size_left(bufsize - sz);
         while(size_left >= BLOCK_MANAGER_BUFFER_SIZE)
         {
             ++page;
@@ -290,7 +290,7 @@ int memory_file::block_manager::read(char *buffer, int offset, int bufsize) cons
     return bufsize;
 }
 
-int memory_file::block_manager::write(const char *buffer, const int offset, const int bufsize)
+int64_t memory_file::block_manager::write(const char *buffer, const int64_t offset, const int64_t bufsize)
 {
     if(offset < 0)
     {
@@ -298,15 +298,15 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
     }
 
     // compute total size
-    int total(offset + bufsize);
+    int64_t total(offset + bufsize);
 
-    // Increased the maximum size to 1Gb instead of 128Mb
+    // Increased the maximum size to 4Gb instead of 1Gb
     // I think we should have a command line flag so you can impose a limit
     // although there should be no reason other than package optimization
     // (i.e. make sure you don't include the "wrong" thing in your packages)
-    if(total < 0)
+    if(total > 4L * 1024 * 1024 * 1024)
     {
-        throw memfile_exception_parameter("memory file size too large (over 2Gb?!)");
+        throw memfile_exception_parameter("memory file size too large (over 4Gb?!)");
     }
 
     // allocate blocks to satisfy the total size
@@ -319,9 +319,9 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
     // if offset is larger than size we want to clear the buffers in between
     if(offset > f_size)
     {
-        int pos(f_size & (BLOCK_MANAGER_BUFFER_SIZE - 1));
-        int page(f_size >> BLOCK_MANAGER_BUFFER_BITS);
-        int sz(std::min(offset - f_size, BLOCK_MANAGER_BUFFER_SIZE - pos));
+        int64_t pos(f_size & (BLOCK_MANAGER_BUFFER_SIZE - 1));
+        int64_t page(f_size >> BLOCK_MANAGER_BUFFER_BITS);
+        int64_t sz(std::min(offset - f_size, BLOCK_MANAGER_BUFFER_SIZE - pos));
         const auto& buff_pos( f_buffers[page].begin() + pos );
         std::fill( buff_pos, buff_pos + sz, 0 );
         f_size += sz;
@@ -339,10 +339,10 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
     if(bufsize > 0)
     {
         // copy up to the end of the current block
-        const int pos(offset & (BLOCK_MANAGER_BUFFER_SIZE - 1));
-        int page(offset >> BLOCK_MANAGER_BUFFER_BITS);
-        const int sz(std::min(BLOCK_MANAGER_BUFFER_SIZE - pos, bufsize));
-        int buffer_size(bufsize);
+        const int64_t pos(offset & (BLOCK_MANAGER_BUFFER_SIZE - 1));
+        int64_t page(offset >> BLOCK_MANAGER_BUFFER_BITS);
+        const int64_t sz(std::min(BLOCK_MANAGER_BUFFER_SIZE - pos, bufsize));
+        int64_t buffer_size(bufsize);
         std::copy( buffer, buffer + sz, f_buffers[page].begin() + pos );
         buffer += sz;
         buffer_size -= sz;
@@ -360,7 +360,7 @@ int memory_file::block_manager::write(const char *buffer, const int offset, cons
         }
     }
 
-    f_size = std::max(static_cast<int>(f_size), total);
+    f_size = std::max(static_cast<int64_t>(f_size), total);
 
     return bufsize;
 }
@@ -394,10 +394,10 @@ int memory_file::block_manager::compare(const block_manager& rhs) const
     return 1;
 }
 
-memory_file::file_format_t memory_file::block_manager::data_to_format(int offset, int /*bufsize*/ ) const
+memory_file::file_format_t memory_file::block_manager::data_to_format(int64_t offset, int64_t /*bufsize*/ ) const
 {
     char buf[1024];
-    int sz(read(buf, offset, sizeof(buf)));
+    int64_t sz(read(buf, offset, sizeof(buf)));
     return memory_file::data_to_format(buf, sz);
 }
 
@@ -482,7 +482,7 @@ public:
 #pragma GCC diagnostic pop
 #endif
         memset(&f_zheader, 0, sizeof(f_zheader) );
-        f_zheader.time = static_cast<int>(time(NULL));
+        f_zheader.time = time(NULL);
         // what value are valid for os? it is undefined in the header...
         // search for RFC 1952 for a list
 #if defined(MO_WINDOWS)
@@ -505,16 +505,16 @@ public:
         result.create(memory_file::file_format_gz);
         Bytef out[1024 * 64]; // 64Kb like the block manager at this time
         char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-        int in_offset(0);
-        int offset(0);
-        int sz(block.size());
+        int64_t in_offset(0);
+        int64_t offset(0);
+        int64_t sz(block.size());
         f_zstream.next_in = reinterpret_cast<Bytef *>(in);
         f_zstream.avail_in = 0;
         while(sz > 0) {
             if(f_zstream.avail_in < static_cast<uInt>(memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE)) {
                 // move what's left to the start of the buffer
                 memmove(in, f_zstream.next_in, f_zstream.avail_in);
-                int left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE - static_cast<int>(f_zstream.avail_in)));
+                int64_t left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE - f_zstream.avail_in));
                 block.read(in + f_zstream.avail_in, in_offset, left_used);
                 sz -= left_used;
                 in_offset += left_used;
@@ -530,7 +530,7 @@ public:
                 // go to zero and thus we need to handle that special case
                 r = deflate(&f_zstream, sz == 0 ? Z_FINISH : Z_NO_FLUSH);
                 check_error(r);
-                int size_used(static_cast<int>(sizeof(out) - f_zstream.avail_out));
+                int64_t size_used(sizeof(out) - f_zstream.avail_out);
                 result.write(reinterpret_cast<char *>(out), offset, size_used);
                 offset += size_used;
             } while(f_zstream.avail_out == 0 && r != Z_STREAM_END && r != Z_BUF_ERROR);
@@ -573,16 +573,16 @@ public:
         result.create(memory_file::file_format_other);
         Bytef out[1024 * 64];
         char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-        int sz(block.size());
-        int in_offset(0);
-        int offset(0);
+        int64_t sz(block.size());
+        int64_t in_offset(0);
+        int64_t offset(0);
         f_zstream.next_in = reinterpret_cast<Bytef *>(in);
         f_zstream.avail_in = 0;
         while(sz > 0) {
             if(f_zstream.avail_in < static_cast<uInt>(memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE)) {
                 // move what's left to the start of the buffer
                 memmove(in, f_zstream.next_in, f_zstream.avail_in);
-                int left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE - static_cast<int>(f_zstream.avail_in)));
+                int64_t left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE - f_zstream.avail_in));
                 block.read(in + f_zstream.avail_in, in_offset, left_used);
                 sz -= left_used;
                 in_offset += left_used;
@@ -598,7 +598,7 @@ public:
                 // go to zero and thus we need to handle that special case
                 r = inflate(&f_zstream, sz == 0 ? Z_NO_FLUSH : Z_NO_FLUSH);
                 check_error(r);
-                int size_used(static_cast<int>(sizeof(out) - f_zstream.avail_out));
+                int64_t size_used(sizeof(out) - f_zstream.avail_out);
                 result.write(reinterpret_cast<char *>(out), offset, size_used);
                 offset += size_used;
             } while(f_zstream.avail_out == 0 && r != Z_STREAM_END && r != Z_BUF_ERROR);
@@ -664,10 +664,10 @@ public:
     {
         result.create(memory_file::file_format_bz2);
         char out[1024 * 64]; // 64Kb like the block manager at this time
-        int out_offset(0);
+        int64_t out_offset(0);
         char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-        int in_offset(0);
-        int sz(block.size());
+        int64_t in_offset(0);
+        int64_t sz(block.size());
         f_bzstream.next_in = in;
         f_bzstream.avail_in = 0;
         while(sz > 0)
@@ -676,7 +676,7 @@ public:
             {
                 // move what's left to the start of the buffer
                 memmove(in, f_bzstream.next_in, f_bzstream.avail_in);
-                const int left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE - static_cast<int>(f_bzstream.avail_in)));
+                const int64_t left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE - f_bzstream.avail_in));
                 block.read(in + f_bzstream.avail_in, in_offset, left_used);
                 sz -= left_used;
                 in_offset += left_used;
@@ -693,7 +693,7 @@ public:
                 // go to zero and thus we need to handle that special case
                 r = BZ2_bzCompress(&f_bzstream, sz == 0 ? BZ_FINISH : BZ_RUN);
                 check_error(r);
-                const int size_used(static_cast<int>(sizeof(out) - f_bzstream.avail_out));
+                const int64_t size_used(sizeof(out) - f_bzstream.avail_out);
                 result.write(reinterpret_cast<char *>(out), out_offset, size_used);
                 out_offset += size_used;
             }
@@ -728,10 +728,10 @@ public:
     {
         result.create(memory_file::file_format_other);
         char out[1024 * 64]; // 64Kb like the block manager at this time
-        int out_offset(0);
+        int64_t out_offset(0);
         char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-        int in_offset(0);
-        int sz(block.size());
+        int64_t in_offset(0);
+        int64_t sz(block.size());
         f_bzstream.next_in = in;
         f_bzstream.avail_in = 0;
         while(sz > 0)
@@ -740,7 +740,7 @@ public:
             {
                 // move what's left to the start of the buffer
                 memmove(in, f_bzstream.next_in, f_bzstream.avail_in);
-                int left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE - static_cast<int>(f_bzstream.avail_in)));
+                int64_t left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE - static_cast<int64_t>(f_bzstream.avail_in)));
                 block.read(in + f_bzstream.avail_in, in_offset, left_used);
                 sz -= left_used;
                 in_offset += left_used;
@@ -757,7 +757,7 @@ public:
                 // go to zero and thus we need to handle that special case
                 r = BZ2_bzDecompress(&f_bzstream);
                 check_error(r);
-                int size_used(static_cast<int>(sizeof(out) - f_bzstream.avail_out));
+                int64_t size_used(sizeof(out) - f_bzstream.avail_out);
                 result.write(reinterpret_cast<char *>(out), out_offset, size_used);
                 out_offset += size_used;
             }
@@ -830,15 +830,15 @@ public:
     void compress(memory_file& result, const memory_file::block_manager& block)
     {
         result.create(memory_file::file_format_zst);
-        const size_t outSize = ZSTD_CStreamOutSize();
+        const int64_t outSize = ZSTD_CStreamOutSize();
         char out[outSize];
-        int out_offset(0);
+        int64_t out_offset(0);
         char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-        int in_offset(0);
-        int sz(block.size());
+        int64_t in_offset(0);
+        int64_t sz(block.size());
         while(sz > 0)
         {
-            const int left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE));
+            const int64_t left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE));
             block.read(in, in_offset, left_used);
             sz -= left_used;
             in_offset += left_used;
@@ -856,7 +856,7 @@ public:
                 zout.dst = out;
                 zout.size = outSize;
                 zout.pos = 0;
-                const size_t remaining = ZSTD_compressStream2(f_cctx, &zout, &zin, mode);
+                const int64_t remaining = ZSTD_compressStream2(f_cctx, &zout, &zin, mode);
                 result.write(out, out_offset, zout.pos);
                 out_offset += zout.pos;
                 finished = lastChunk ? (remaining == 0) : (zin.pos == zin.size);
@@ -888,16 +888,16 @@ public:
     void decompress(memory_file& result, const memory_file::block_manager& block)
     {
         result.create(memory_file::file_format_other);
-        const size_t outSize = ZSTD_CStreamOutSize();
+        const int64_t outSize = ZSTD_CStreamOutSize();
         char out[outSize];
-        int out_offset(0);
+        int64_t out_offset(0);
         char in[memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-        int in_offset(0);
-        int sz(block.size());
-        size_t lastRet = 0;
+        int64_t in_offset(0);
+        int64_t sz(block.size());
+        int64_t lastRet = 0;
         while(sz > 0)
         {
-            const int left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE));
+            const int64_t left_used(std::min(sz, memory_file::block_manager::BLOCK_MANAGER_BUFFER_SIZE));
             block.read(in, in_offset, left_used);
             sz -= left_used;
             in_offset += left_used;
@@ -911,7 +911,7 @@ public:
                 zout.dst = out;
                 zout.size = outSize;
                 zout.pos = 0;
-                const size_t ret = ZSTD_decompressStream(f_dctx, &zout , &zin);
+                const int64_t ret = ZSTD_decompressStream(f_dctx, &zout , &zin);
                 result.write(out, out_offset, zout.pos);
                 out_offset += zout.pos;
                 lastRet = ret;
@@ -1140,7 +1140,7 @@ void memory_file::disk_file_to_info(const wpkg_filename::uri_filename& filename,
     case S_IFDIR:
         // no one supports directory sizes in a tarball
         // but we need to have it for dir_size()
-        info.set_size(static_cast<int>(s.get_size()));
+        info.set_size(s.get_size());
         break;
 
     }
@@ -1297,18 +1297,18 @@ bool memory_file::is_text() const
     // TODO: add a test to see whether the file starts with a BOM
     //       and if so verify the file as the corresponding Unicode
     //       encoding instead (i.e. UTF-8, UCS-2, UCS-4)
-    int offset(0);
+    int64_t offset(0);
     while(offset < f_buffer.size())
     {
         // TODO: to avoid the read() altogether, move this function inside the
         //       f_buffer implementation so it can directly access the
         //       data without copying it
-        int sz(std::min(f_buffer.size() - offset, block_manager::BLOCK_MANAGER_BUFFER_SIZE));
+        int64_t sz(std::min(f_buffer.size() - offset, block_manager::BLOCK_MANAGER_BUFFER_SIZE));
         char buf[block_manager::BLOCK_MANAGER_BUFFER_SIZE];
         f_buffer.read(buf, offset, sz);
         offset += sz;
 
-        for(int i(0); i < sz; ++i) {
+        for(int64_t i(0); i < sz; ++i) {
             unsigned char c(static_cast<unsigned char>(buf[i]));
             if((c < ' ' || c > 126)
             && (c < 0xA0 /*|| c > 0xFF -- always false warning */)
@@ -1321,7 +1321,7 @@ bool memory_file::is_text() const
     return true;
 }
 
-memory_file::file_format_t memory_file::data_to_format(const char *data, int bufsize)
+memory_file::file_format_t memory_file::data_to_format(const char *data, int64_t bufsize)
 {
     if(bufsize >= 3 && data[0] == 0x1F
     && static_cast<unsigned char>(data[1]) == 0x8B && data[2] == 0x08) {
@@ -1646,11 +1646,11 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
             // read per block (at most) to avoid allocating a really big buffer
             char buf[block_manager::BLOCK_MANAGER_BUFFER_SIZE];
             wpkg_stream::fstream::off_type sz(file_size);
-            int pos(0);
+            wpkg_stream::fstream::off_type pos(0);
             while(sz > 0)
             {
                 wpkg_stream::fstream::off_type blockSize(block_manager::BLOCK_MANAGER_BUFFER_SIZE);
-                int read_size(std::min(sz, blockSize));
+                auto read_size(std::min(sz, blockSize));
                 file.read(buf, read_size);
                 if(!file.good())
                 {
@@ -1962,12 +1962,12 @@ void memory_file::write_file(const wpkg_filename::uri_filename& filename, bool c
             throw memfile_exception_io("opening the output file \"" + filename.original_filename() + "\" failed");
         }
     }
-    int offset(0);
-    int sz(f_buffer.size());
+    int64_t offset(0);
+    int64_t sz(f_buffer.size());
     while(sz > 0)
     {
         char buf[block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-        int write_size(std::min(sz, block_manager::BLOCK_MANAGER_BUFFER_SIZE));
+        int64_t write_size(std::min(sz, block_manager::BLOCK_MANAGER_BUFFER_SIZE));
         f_buffer.read(buf, offset, write_size);
         file.write(buf, write_size);
         if(!file.good())
@@ -1991,8 +1991,8 @@ void memory_file::copy(memory_file& destination) const
         destination.create(f_format);
         {
             char buf[block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-            int offset(0);
-            int sz(f_buffer.size());
+            int64_t offset(0);
+            int64_t sz(f_buffer.size());
             while(sz >= block_manager::BLOCK_MANAGER_BUFFER_SIZE) {
                 f_buffer.read(buf, offset, block_manager::BLOCK_MANAGER_BUFFER_SIZE);
                 destination.write(buf, offset, block_manager::BLOCK_MANAGER_BUFFER_SIZE);
@@ -2170,7 +2170,7 @@ void memory_file::end_archive()
     }
 }
 
-int memory_file::read(char *buffer, int offset, int bufsize) const
+int64_t memory_file::read(char *buffer, int64_t offset, int64_t bufsize) const
 {
     if(!f_created && !f_loaded) {
         throw memfile_exception_undefined("you cannot read data from an undefined file");
@@ -2207,7 +2207,7 @@ int memory_file::read(char *buffer, int offset, int bufsize) const
  *
  * \return true if more data is available, false once the end of the file was reached.
  */
-bool memory_file::read_line(int& offset, std::string& result) const
+bool memory_file::read_line(int64_t& offset, std::string& result) const
 {
     result.clear();
 
@@ -2260,7 +2260,7 @@ bool memory_file::read_line(int& offset, std::string& result) const
     return true;
 }
 
-int memory_file::write(const char *buffer, int offset, int bufsize)
+int64_t memory_file::write(const char *buffer, int64_t offset, int64_t bufsize)
 {
     if(file_format_undefined == f_format)
     {
@@ -2320,7 +2320,7 @@ void memory_file::append_file(const file_info& info, const memory_file& data)
  *
  * \return The memory file size in byte (or number of files for a directory.)
  */
-int memory_file::size() const
+int64_t memory_file::size() const
 {
     switch(f_format) {
     case file_format_directory:
@@ -2359,7 +2359,7 @@ void memory_file::dir_rewind(const wpkg_filename::uri_filename& path, bool recur
     }
 }
 
-int memory_file::dir_pos() const
+int64_t memory_file::dir_pos() const
 {
     // Note: at this point we do not know whether it is legal to call this
     // function (i.e. whether dir_rewind() was ever called)
@@ -2458,7 +2458,7 @@ bool memory_file::dir_next(file_info& info, memory_file *data) const
 
     }
 
-    int adjusted_size((info.get_size() + block_size - 1) & ~(block_size - 1));
+    int64_t adjusted_size((info.get_size() + block_size - 1) & ~(block_size - 1));
     if(f_dir_pos + adjusted_size > f_buffer.size())
     {
         info.set_size(0);
@@ -2474,9 +2474,9 @@ bool memory_file::dir_next(file_info& info, memory_file *data) const
             // user wants a copy of the data!
             data->create(f_buffer.data_to_format(f_dir_pos, info.get_size()));
             char buf[block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-            int in_offset(f_dir_pos);
-            int out_offset(0);
-            int sz(info.get_size());
+            int64_t in_offset(f_dir_pos);
+            int64_t out_offset(0);
+            int64_t sz(info.get_size());
             while(sz >= block_manager::BLOCK_MANAGER_BUFFER_SIZE)
             {
                 f_buffer.read(buf, in_offset, block_manager::BLOCK_MANAGER_BUFFER_SIZE);
@@ -2503,9 +2503,9 @@ bool memory_file::dir_next(file_info& info, memory_file *data) const
     return true;
 }
 
-int memory_file::dir_size(const wpkg_filename::uri_filename& path, int& disk_size, int block_size)
+int64_t memory_file::dir_size(const wpkg_filename::uri_filename& path, int64_t& disk_size, int block_size)
 {
-    int byte_size(0);
+    int64_t byte_size(0);
     disk_size = 0;
     if(!path.exists())
     {
@@ -2516,7 +2516,7 @@ int memory_file::dir_size(const wpkg_filename::uri_filename& path, int& disk_siz
         // it's not a directory, just return that one file size
         wpkg_filename::uri_filename::file_stat s;
         path.os_stat(s);
-        byte_size = static_cast<int>(s.get_size());
+        byte_size = s.get_size();
         disk_size = (byte_size + block_size - 1) / block_size;
     }
     else
@@ -2535,7 +2535,7 @@ int memory_file::dir_size(const wpkg_filename::uri_filename& path, int& disk_siz
                 //       different from the computers where they will be
                 //       installed and trying to get a perfect size will not
                 //       help at this stage
-                int file_size(static_cast<int>(info.get_size()));
+                int64_t file_size(info.get_size());
                 byte_size += file_size;
                 disk_size += (file_size + block_size - 1) / block_size;
             }
@@ -2559,8 +2559,8 @@ void memory_file::raw_md5sum(md5::raw_md5sum& raw) const
     md5::md5sum sum;
 
     char buf[block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-    int offset(0);
-    int sz(f_buffer.size());
+    int64_t offset(0);
+    int64_t sz(f_buffer.size());
     while(sz >= block_manager::BLOCK_MANAGER_BUFFER_SIZE)
     {
         f_buffer.read(buf, offset, block_manager::BLOCK_MANAGER_BUFFER_SIZE);
@@ -2587,8 +2587,8 @@ std::string memory_file::md5sum() const
     md5::md5sum sum;
 
     char buf[block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-    int offset(0);
-    int sz(f_buffer.size());
+    int64_t offset(0);
+    int64_t sz(f_buffer.size());
     while(sz >= block_manager::BLOCK_MANAGER_BUFFER_SIZE)
     {
         f_buffer.read(buf, offset, block_manager::BLOCK_MANAGER_BUFFER_SIZE);
@@ -2807,7 +2807,7 @@ bool memory_file::dir_next_tar(file_info& info) const
     std::string long_symlink;
     if(info.get_file_type() == file_info::long_symlink)
     {
-        int adjusted_size((info.get_size() + 511) & ~511);
+        int64_t adjusted_size((info.get_size() + 511) & ~511);
         if(f_dir_pos + adjusted_size > f_buffer.size())
         {
             info.set_size(0);
@@ -2816,7 +2816,7 @@ bool memory_file::dir_next_tar(file_info& info) const
 
         // note that the size is likely to include a null terminator
         long_symlink.resize(info.get_size());
-        f_buffer.read(&long_symlink[0], f_dir_pos, static_cast<int>(long_symlink.size()));
+        f_buffer.read(&long_symlink[0], f_dir_pos, long_symlink.size());
         if(long_symlink[info.get_size() - 1] == '\0')
         {
             long_symlink.resize(info.get_size() - 1);
@@ -2843,7 +2843,7 @@ bool memory_file::dir_next_tar(file_info& info) const
 
         // note that the size is likely to include a null terminator
         long_filename.resize(info.get_size());
-        f_buffer.read(&long_filename[0], f_dir_pos, static_cast<int>(long_filename.size()));
+        f_buffer.read(&long_filename[0], f_dir_pos, long_filename.size());
         if(long_filename[info.get_size() - 1] == '\0')
         {
             long_filename.resize(info.get_size() - 1);
@@ -2876,7 +2876,7 @@ bool memory_file::dir_next_tar(file_info& info) const
         //   http://publib.boulder.ibm.com/infocenter/zos/v1r13/index.jsp?topic=%2Fcom.ibm.zos.r13.bpxa500%2Fpxarchfm.htm
         std::string paxheader;
         paxheader.resize(info.get_size());
-        f_buffer.read(&paxheader[0], f_dir_pos, static_cast<int>(paxheader.size()));
+        f_buffer.read(&paxheader[0], f_dir_pos, paxheader.size());
         f_dir_pos += adjusted_size;
 
         for(const char *x(paxheader.c_str()); *x != '\0'; ++x)
@@ -2947,7 +2947,7 @@ bool memory_file::dir_next_tar(file_info& info) const
         {
             p = long_mtime.length();
         }
-        info.set_mtime(long_mtime.c_str(), static_cast<int>(p), 10);
+        info.set_mtime(long_mtime.c_str(), p, 10);
     }
     if(!long_ctime.empty())
     {
@@ -2956,7 +2956,7 @@ bool memory_file::dir_next_tar(file_info& info) const
         {
             p = long_ctime.length();
         }
-        info.set_ctime(long_ctime.c_str(), static_cast<int>(p), 10);
+        info.set_ctime(long_ctime.c_str(), p, 10);
     }
     if(!long_atime.empty())
     {
@@ -2965,7 +2965,7 @@ bool memory_file::dir_next_tar(file_info& info) const
         {
             p = long_atime.length();
         }
-        info.set_atime(long_atime.c_str(), static_cast<int>(p), 10);
+        info.set_atime(long_atime.c_str(), p, 10);
     }
 
     return true;
@@ -3265,7 +3265,7 @@ bool memory_file::dir_next_meta(file_info& info) const
     std::string line;
     do
     {
-        int offset(f_dir_pos);
+        int64_t offset(f_dir_pos);
         if(!read_line(offset, line))
         {
             return false;
@@ -3770,12 +3770,12 @@ void memory_file::append_ar(const file_info& info, const memory_file& data)
     write(buf, f_buffer.size(), sizeof(buf));
 
     // copy the file data
-    int data_size(data.size());
+    int64_t data_size(data.size());
     if(data_size > 0)
     {
         char d[block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-        int offset(f_buffer.size());
-        int pos(0);
+        int64_t offset(f_buffer.size());
+        int64_t pos(0);
         while(data_size >= block_manager::BLOCK_MANAGER_BUFFER_SIZE)
         {
             data.read(d, pos, block_manager::BLOCK_MANAGER_BUFFER_SIZE);
@@ -3811,11 +3811,11 @@ void memory_file::append_tar(const file_info& info, const memory_file& data)
         file_info symlink_info;
         memory_file name;
         name.create(file_format_other);
-        name.write(&link[0], 0, static_cast<int>(link.length()));
+        name.write(&link[0], 0, link.length());
         char eos(0);
-        name.write(&eos, static_cast<int>(link.length()), 1); // NUL
+        name.write(&eos, link.length(), 1); // NUL
         symlink_info.set_filename("././@LongLink");
-        symlink_info.set_size(static_cast<int>(link.length() + 1));
+        symlink_info.set_size(link.length() + 1);
         symlink_info.set_file_type(file_info::long_symlink);
         symlink_info.set_mode(0);
         symlink_info.set_mtime(0);
@@ -3857,11 +3857,11 @@ void memory_file::append_tar(const file_info& info, const memory_file& data)
         file_info filename_info;
         memory_file name;
         name.create(file_format_other);
-        name.write(&filename[0], 0, static_cast<int>(filename.length()));
+        name.write(&filename[0], 0, filename.length());
         char eos(0);
-        name.write(&eos, static_cast<int>(filename.length()), 1); // NUL
+        name.write(&eos, filename.length(), 1); // NUL
         filename_info.set_filename("././@LongLink");
-        filename_info.set_size(static_cast<int>(filename.length() + 1));
+        filename_info.set_size(filename.length() + 1);
         filename_info.set_file_type(file_info::long_filename);
         filename_info.set_mode(0);
         filename_info.set_mtime(0);
@@ -3938,7 +3938,7 @@ void memory_file::append_tar_write(const file_info& info, const memory_file& dat
         break;
 
     }
-    file_info::int_to_str(&header[136], static_cast<int>(info.get_mtime()), 11, 8, '0');
+    file_info::int_to_str(&header[136], info.get_mtime(), 11, 8, '0');
 
     switch(info.get_file_type())
     {
@@ -4046,18 +4046,18 @@ void memory_file::append_tar_write(const file_info& info, const memory_file& dat
     }
     header[155] = ' ';
 
-    memory_file::write(&header[0], f_buffer.size(), static_cast<int>(header.size()));
+    memory_file::write(&header[0], f_buffer.size(), header.size());
 
     // copy the file data
     if(has_data)
     {
-        int data_size(data.size());
-        int in_offset(0);
-        int offset(f_buffer.size());
+        int64_t data_size(data.size());
+        int64_t in_offset(0);
+        int64_t offset(f_buffer.size());
         while(data_size > 0)
         {
             char buf[block_manager::BLOCK_MANAGER_BUFFER_SIZE];
-            int sz(std::min(data_size, block_manager::BLOCK_MANAGER_BUFFER_SIZE));
+            int64_t sz(std::min(data_size, block_manager::BLOCK_MANAGER_BUFFER_SIZE));
             data.read(buf, in_offset, sz);
             in_offset += sz;
             data_size -= sz;
@@ -4194,7 +4194,7 @@ void memory_file::append_wpkg(const file_info& info, const memory_file& data)
 
     if(filename.size() > 300)
     {
-        write(filename.c_str(), f_buffer.size(), static_cast<int>(filename.length()));
+        write(filename.c_str(), f_buffer.size(), filename.length());
         const int length(sizeof(wpkgar::wpkgar_block_t) - (f_buffer.size() & (sizeof(wpkgar::wpkgar_block_t) - 1)));
         if(length != sizeof(wpkgar::wpkgar_block_t))
         {
@@ -4207,7 +4207,7 @@ void memory_file::append_wpkg(const file_info& info, const memory_file& data)
     }
     if(link.size() > 300)
     {
-        write(link.c_str(), f_buffer.size(), static_cast<int>(link.length()));
+        write(link.c_str(), f_buffer.size(), link.length());
         const int length(sizeof(wpkgar::wpkgar_block_t) - (f_buffer.size() & (sizeof(wpkgar::wpkgar_block_t) - 1)));
         if(length != sizeof(wpkgar::wpkgar_block_t))
         {
@@ -4253,7 +4253,7 @@ void memory_file::file_info::reset()
     f_gid = 0;
     f_mode = 0400;
     f_size = 0;
-    f_mtime = static_cast<int>(time(NULL));
+    f_mtime = time(NULL);
     f_dev_major = 0;
     f_dev_minor = 0;
     // f_raw_md5sum -- there isn't a clear for this one (necessary?)
@@ -4367,7 +4367,7 @@ std::string memory_file::file_info::get_mode_flags() const
     return result;
 }
 
-int memory_file::file_info::get_size() const
+int64_t memory_file::file_info::get_size() const
 {
     return f_size;
 }
@@ -4542,15 +4542,15 @@ void memory_file::file_info::set_mode(const char *m, int max_size, int base)
     set_field(field_name_mode);
 }
 
-void memory_file::file_info::set_size(int size)
+void memory_file::file_info::set_size(int64_t size)
 {
     f_size = size;
     set_field(field_name_size);
 }
 
-void memory_file::file_info::set_size(const char *s, int max_size, int base)
+void memory_file::file_info::set_size(const char *s, int64_t max_size, int base)
 {
-    f_size = str_to_int(s, max_size, base);
+    f_size = str_to_int64(s, max_size, base);
     set_field(field_name_size);
 }
 
@@ -4562,7 +4562,7 @@ void memory_file::file_info::set_mtime(time_t mtime)
 
 void memory_file::file_info::set_mtime(const char *t, int max_size, int base)
 {
-    f_mtime = str_to_int(t, max_size, base);
+    f_mtime = str_to_int64(t, max_size, base);
     set_field(field_name_mtime);
 }
 
@@ -4574,7 +4574,7 @@ void memory_file::file_info::set_ctime(time_t ctime)
 
 void memory_file::file_info::set_ctime(const char *t, int max_size, int base)
 {
-    f_ctime = str_to_int(t, max_size, base);
+    f_ctime = str_to_int64(t, max_size, base);
     set_field(field_name_ctime);
 }
 
@@ -4586,7 +4586,7 @@ void memory_file::file_info::set_atime(time_t atime)
 
 void memory_file::file_info::set_atime(const char *t, int max_size, int base)
 {
-    f_atime = str_to_int(t, max_size, base);
+    f_atime = str_to_int64(t, max_size, base);
     set_field(field_name_atime);
 }
 
@@ -4636,6 +4636,16 @@ int memory_file::file_info::strnlen(const char *str, int n)
 
 int memory_file::file_info::str_to_int(const char *s, int n, int base)
 {
+    const auto result = memory_file::file_info::str_to_int64(s, n, base);
+    if(result > 0x7FFFFFFF) {
+        // this should never happen (because of size constraints)
+        throw memfile_exception_compatibility("number too large in value string");
+    }
+    return static_cast<int>(result);
+}
+
+int64_t memory_file::file_info::str_to_int64(const char *s, int64_t n, int base)
+{
     const char *start(s);
     const int length(n);
 
@@ -4676,14 +4686,10 @@ int memory_file::file_info::str_to_int(const char *s, int n, int base)
     {
         throw memfile_exception_compatibility("spurious characters found in value string \"" + std::string(s, n) + "\" (part of \"" + std::string(start, length) + "\")");
     }
-    if(result > 0x7FFFFFFF) {
-        // this should never happen (because of size constraints)
-        throw memfile_exception_compatibility("number too large in value string");
-    }
-    return static_cast<int>(result);
+    return static_cast<int64_t>(result);
 }
 
-void memory_file::file_info::int_to_str(char *d, uint32_t value, int len, int base, char fill)
+void memory_file::file_info::int_to_str(char *d, uint64_t value, int len, int base, char fill)
 {
     if(base != 10 && base != 8) {
         throw memfile_exception_parameter("int_to_str() only accepts a base of 8 or 10");

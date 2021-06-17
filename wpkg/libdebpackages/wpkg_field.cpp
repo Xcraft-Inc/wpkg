@@ -1190,7 +1190,7 @@ bool field_file::read_field()
         return false;
     }
 
-    int next_offset(f_offset);
+    int64_t next_offset(f_offset);
     while(f_input->read_line(next_offset, input_line))
     {
         const char *s(input_line.c_str());
@@ -1362,7 +1362,7 @@ void field_file::write(memfile::memory_file& file, write_mode_t mode, const list
             std::shared_ptr<field_t> info(get_field_info(*it));
             std::string value(mode != WRITE_MODE_RAW_FIELDS ? info->get_transformed_value() : info->get_value());
             std::string field(*it + ": " + output_multiline_field(value) + "\n");
-            file.write(field.c_str(), file.size(), static_cast<int>(field.length()));
+            file.write(field.c_str(), file.size(), field.length());
             output_fields[*it] = 0;
         }
     }
@@ -1374,7 +1374,7 @@ void field_file::write(memfile::memory_file& file, write_mode_t mode, const list
             std::shared_ptr<field_t> info(get_field_info(it->first));
             std::string value(mode != WRITE_MODE_RAW_FIELDS ? info->get_transformed_value() : info->get_value());
             std::string field(it->first + ": " + output_multiline_field(value) + "\n");
-            file.write(field.c_str(), file.size(), static_cast<int>(field.length()));
+            file.write(field.c_str(), file.size(), field.length());
         }
     }
 
@@ -1384,7 +1384,7 @@ void field_file::write(memfile::memory_file& file, write_mode_t mode, const list
         {
             // TBD: should we also pass variables through the transformation code?
             std::string field(it->first + "=" + output_multiline_field(it->second->get_value()) + "\n");
-            file.write(field.c_str(), file.size(), static_cast<int>(field.length()));
+            file.write(field.c_str(), file.size(), field.length());
         }
     }
 }

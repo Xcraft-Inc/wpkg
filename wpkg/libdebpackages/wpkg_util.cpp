@@ -312,7 +312,7 @@ bool is_package_name(const std::string& name)
  */
 void parse_md5sums(md5sums_map_t& sums, memfile::memory_file& md5file)
 {
-    int offset(0);
+    int64_t offset(0);
     std::string line;
     while(md5file.read_line(offset, line))
     {

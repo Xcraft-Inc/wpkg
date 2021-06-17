@@ -519,7 +519,7 @@ void wpkgar_repository::create_index(memfile::memory_file& index_file, const std
                 md5sum_filename.set_filename(md5sum_filename.original_filename() + ".md5sum");
                 if(md5sum_filename.exists())
                 {
-                    int offset(0);
+                    int64_t offset(0);
                     memfile::memory_file md5sum_file;
                     md5sum_file.read_file(md5sum_filename);
                     md5sum_file.read_line(offset, md5sum);
@@ -563,7 +563,7 @@ void wpkgar_repository::create_index(memfile::memory_file& index_file, const std
                 md5sum_filename.set_filename(md5sum_filename.original_filename() + ".md5sum");
                 if(md5sum_filename.exists())
                 {
-                    int offset(0);
+                    int64_t offset(0);
                     memfile::memory_file md5sum_file;
                     md5sum_file.read_file(md5sum_filename);
                     md5sum_file.read_line(offset, md5sum);
@@ -828,7 +828,7 @@ void wpkgar_repository::read_sources(const memfile::memory_file& file, source_ve
         file.decompress(sources_file);
     }
 
-    int offset(0);
+    int64_t offset(0);
     for(;;)
     {
         source src;
@@ -1143,7 +1143,7 @@ const wpkgar_repository::update_entry_vector_t *wpkgar_repository::load_index_li
     {
         memfile::memory_file update_file;
         update_file.read_file(name);
-        int offset(0);
+        int64_t offset(0);
         std::string line;
         for(;;)
         {

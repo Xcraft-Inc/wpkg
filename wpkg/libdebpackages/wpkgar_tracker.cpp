@@ -624,7 +624,7 @@ void wpkgar_tracker::rollback()
 
         // parse all the commands & parameters
         int line(0);
-        int offset(0);
+        int64_t offset(0);
         std::string command_line;
         command_list_t command_list;
         while(script.read_line(offset, command_line))
