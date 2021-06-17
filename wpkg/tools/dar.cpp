@@ -337,7 +337,7 @@ int dar(int argc, char *argv[])
                                 printf("%8.8s/%-8.8s",
                                     user.c_str(), group.c_str());
                             }
-                            printf(" %6d  %s  ",
+                            printf(" %6ld  %s  ",
                                     info.get_size(),
                                     info.get_date().c_str());
                             if(md5sums)
