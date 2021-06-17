@@ -290,7 +290,7 @@ public:
     void copy(memory_file& destination) const;
     int compare(const memory_file& rhs) const;
 
-    // compression handling (gz or bz2)
+    // compression handling (gz, bz2 or zst)
     bool is_compressed() const;
     void compress(memory_file& result, file_format_t format, int zlevel = 9) const;
     void decompress(memory_file& result) const;
