@@ -60,7 +60,7 @@ option( BUILD_PKGEXPLORER "Enable the build of pkg-explorer" OFF )
 unigw_ConfigureMakeProject(
     PROJECT_NAME wpkg
     BUILD_TYPE   Release
-    CONFIG_ARGS  -DWPKG_VERSION=${UNIGW_VERSION}
+    CONFIG_ARGS  -DWPKG_VERSION=${UNIGW_VERSION} -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
 )
 
 if( BUILD_PKGEXPLORER )
