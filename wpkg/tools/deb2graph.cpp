@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
     dot.printf("  <tr><td port=\"i7\">&nbsp;</td></tr>\n");
     dot.printf("  </table>>]\n");
     dot.printf("key:i1:e -> key2:i1:w [style=solid,color=\"#aaaaaa\"]\n");
-    dot.printf("key:i2:e -> key2:i2:w [color=\"#cccccc\"]\n");
+    dot.printf("key:i2:e -> key2:i2:w [style=dashed,color=\"#cccccc\"]\n");
     dot.printf("key:i3:e -> key2:i3:w [style=bold,color=\"#8888ff\"]\n");
     dot.printf("key:i4:e -> key2:i4:w [style=solid,color=\"#ff8888\"]\n");
     dot.printf("key:i5:e -> key2:i5:w [style=bold,arrowhead=tee,color=\"#ff8888\"]\n");
