@@ -151,6 +151,14 @@ int main(int argc, char *argv[])
             advgetopt::getopt::required_argument
         },
         {
+            's',
+            0,
+            "skip-svg",
+            NULL,
+            "skip the SVG generation",
+            advgetopt::getopt::no_argument
+        },
+        {
             'o',
             0,
             "output",
@@ -348,24 +356,28 @@ int main(int argc, char *argv[])
 
     dot.write_file("deb2graph.dot");
 
-    std::string cmd("dot -Tsvg deb2graph.dot >");
-    if(opt.is_defined("output"))
+    if(!opt.is_defined("skip-svg"))
     {
-        cmd += opt.get_string("output");
-    }
-    else
-    {
-        cmd += "deb2graph.svg";
+        std::string cmd("dot -Tsvg deb2graph.dot >");
+        if(opt.is_defined("output"))
+        {
+            cmd += opt.get_string("output");
+        }
+        else
+        {
+            cmd += "deb2graph.svg";
+        }
+
+        const int status = system(cmd.c_str());
+        if( status == -1 )
+        {
+            // TODO: Add a message here stating the command could not be launched...
+            return 1;
+        }
+        return status;
     }
 
-    const int status = system(cmd.c_str());
-    if( status == -1 )
-    {
-        // TODO: Add a message here stating the command could not be launched...
-        return 1;
-    }
-
-    return status;
+    return 0;
 }
 
 // vim: ts=4 sw=4 et
