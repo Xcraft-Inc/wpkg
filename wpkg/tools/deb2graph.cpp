@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
             0,
             "output",
             NULL,
-            "define a filename where the final PNG is saved",
+            "define a filename where the final SVG is saved",
             advgetopt::getopt::required_argument
         },
         {
