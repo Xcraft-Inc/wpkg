@@ -87,7 +87,7 @@ void add_nodes(node_names_t& nodes, node_names_t& deps, const std::string field_
                         info.f_filename = dep.f_name;
                         info.f_nodecount = node_count;
                         deps.push_back(info);
-                        dot.printf("n%d [label=\"%s\",shape=ellipse];\n", node_count, dep.f_name.c_str());
+                        dot.printf("n%d [label=\"%s\",shape=box,style=\"rounded,dashed\"];\n", node_count, dep.f_name.c_str());
                         ++node_count;
                         packages = find_nodes(deps, dep.f_name);
                     }
@@ -263,7 +263,8 @@ int main(int argc, char *argv[])
 
     // start creating the .dot file
     dot.create(memfile::memory_file::file_format_other);
-    dot.printf("digraph {\nrankdir=LR;\nlabel=\"Debian Package Dependency Graph\";\n");
+    dot.printf("digraph {\nrankdir=LR;\nfontsize=18;\nfontname=Helvetica;\nlabel=\"Package Dependency Graph\";\n");
+    dot.printf("node [fontsize=8,fontname=Helvetica];\n");
 
     node_names_t nodes;
     node_names_t deps; // dependencies not found on the command line
@@ -287,12 +288,12 @@ int main(int argc, char *argv[])
         nodes.push_back(info);
         std::string version(manager.get_field(package_filename, "Version"));
         std::string architecture(manager.get_field(package_filename, "Architecture"));
-        dot.printf("n%d [label=\"%s %s\\n%s\",shape=box];\n", node_count, package.c_str(), version.c_str(), architecture.c_str());
+        dot.printf("n%d [label=\"%s\\nv%s\\n%s\",shape=box,style=rounded];\n", node_count, package.c_str(), version.c_str(), architecture.c_str());
         ++node_count;
     }
 
     // edges font size to small
-    dot.printf("edge [fontsize=8,fontcolor=\"#990033\",color=\"#cccccc\"];\n");
+    dot.printf("edge [fontsize=8,fontname=Helvetica,arrowsize=0.8,penwidth=0.8,fontcolor=\"#990033\",color=\"#cccccc\"];\n");
 
     // use the dependency fields to define all the nodes of the graph
     dot.printf("edge [style=dashed];\n");
