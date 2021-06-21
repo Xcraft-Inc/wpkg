@@ -273,16 +273,28 @@ int main(int argc, char *argv[])
     dot.printf("key [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n");
     dot.printf("  <tr><td align=\"right\" port=\"i1\">Install-dep&nbsp;</td></tr>\n");
     dot.printf("  <tr><td align=\"right\" port=\"i2\">Build-dep&nbsp;</td></tr>\n");
-    dot.printf("  <tr><td align=\"right\" port=\"i3\">Make-dep&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td align=\"right\" port=\"i3\">Pre-dep&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td align=\"right\" port=\"i4\">Break-dep&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td align=\"right\" port=\"i5\">Conflict-dep&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td align=\"right\" port=\"i6\">X-Build-dep&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td align=\"right\" port=\"i7\">X-Make-dep&nbsp;</td></tr>\n");
     dot.printf("  </table>>]\n");
     dot.printf("key2 [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n");
     dot.printf("  <tr><td port=\"i1\">&nbsp;</td></tr>\n");
     dot.printf("  <tr><td port=\"i2\">&nbsp;</td></tr>\n");
     dot.printf("  <tr><td port=\"i3\">&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td port=\"i4\">&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td port=\"i5\">&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td port=\"i6\">&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td port=\"i7\">&nbsp;</td></tr>\n");
     dot.printf("  </table>>]\n");
-    dot.printf("key:i1:e -> key2:i1:w [color=\"#cccccc\"]\n");
-    dot.printf("key:i2:e -> key2:i2:w [style=dashed,color=\"#008624\"]\n");
-    dot.printf("key:i3:e -> key2:i3:w [style=dashed,color=\"#00677d\"]\n");
+    dot.printf("key:i1:e -> key2:i1:w [style=solid,color=\"#aaaaaa\"]\n");
+    dot.printf("key:i2:e -> key2:i2:w [color=\"#cccccc\"]\n");
+    dot.printf("key:i3:e -> key2:i3:w [style=bold,color=\"#8888ff\"]\n");
+    dot.printf("key:i4:e -> key2:i4:w [style=solid,color=\"#ff8888\"]\n");
+    dot.printf("key:i5:e -> key2:i5:w [style=bold,arrowhead=tee,color=\"#ff8888\"]\n");
+    dot.printf("key:i6:e -> key2:i6:w [style=dashed,color=\"#00677d\"]\n");
+    dot.printf("key:i7:e -> key2:i7:w [style=dashed,color=\"#008624\"]\n");
     dot.printf("}\n");
 
 
