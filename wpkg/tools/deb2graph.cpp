@@ -264,7 +264,27 @@ int main(int argc, char *argv[])
     // start creating the .dot file
     dot.create(memfile::memory_file::file_format_other);
     dot.printf("digraph {\nrankdir=LR;\nfontsize=18;\nfontname=Helvetica;\nlabel=\"Package Dependency Graph\";\n");
-    dot.printf("node [fontsize=8,fontname=Helvetica];\n");
+    dot.printf("node [fontsize=8,fontname=Helvetica,shape=plaintext];\n");
+    dot.printf("subgraph cluster_01 {\n");
+    dot.printf("fontsize=10\n");
+    dot.printf("color=\"white\"\n");
+    dot.printf("label=\"&nbsp;\"\n");
+    dot.printf("edge [arrowsize=0.8]\n");
+    dot.printf("key [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n");
+    dot.printf("  <tr><td align=\"right\" port=\"i1\">Install-dep&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td align=\"right\" port=\"i2\">Build-dep&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td align=\"right\" port=\"i3\">Make-dep&nbsp;</td></tr>\n");
+    dot.printf("  </table>>]\n");
+    dot.printf("key2 [label=<<table border=\"0\" cellpadding=\"2\" cellspacing=\"0\" cellborder=\"0\">\n");
+    dot.printf("  <tr><td port=\"i1\">&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td port=\"i2\">&nbsp;</td></tr>\n");
+    dot.printf("  <tr><td port=\"i3\">&nbsp;</td></tr>\n");
+    dot.printf("  </table>>]\n");
+    dot.printf("key:i1:e -> key2:i1:w [color=\"#cccccc\"]\n");
+    dot.printf("key:i2:e -> key2:i2:w [style=dashed,color=\"#008624\"]\n");
+    dot.printf("key:i3:e -> key2:i3:w [style=dashed,color=\"#00677d\"]\n");
+    dot.printf("}\n");
+
 
     node_names_t nodes;
     node_names_t deps; // dependencies not found on the command line
