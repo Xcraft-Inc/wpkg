@@ -301,8 +301,8 @@ int main(int argc, char *argv[])
     dot.printf("key:i3:e -> key2:i3:w [style=bold,color=\"#8888ff\"]\n");
     dot.printf("key:i4:e -> key2:i4:w [style=solid,color=\"#ff8888\"]\n");
     dot.printf("key:i5:e -> key2:i5:w [style=bold,arrowhead=tee,color=\"#ff8888\"]\n");
-    dot.printf("key:i6:e -> key2:i6:w [style=dashed,color=\"#00677d\"]\n");
-    dot.printf("key:i7:e -> key2:i7:w [style=dashed,color=\"#008624\"]\n");
+    dot.printf("key:i6:e -> key2:i6:w [style=dashed,color=\"#008624\"]\n");
+    dot.printf("key:i7:e -> key2:i7:w [style=dashed,color=\"#00677d\"]\n");
     dot.printf("}\n");
 
 
