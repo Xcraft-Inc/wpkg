@@ -49,6 +49,9 @@ set( UNIGW_VERSION "1.0.2" CACHE STRING "WPKG version." )
 
 option( BUILD_PKGEXPLORER "Enable the build of pkg-explorer" OFF )
 
+if( NOT CMAKE_BUILD_TYPE )
+    set( CMAKE_BUILD_TYPE Release )
+endif()
 
 ################################################################################
 # WPKG libraries
@@ -59,15 +62,15 @@ option( BUILD_PKGEXPLORER "Enable the build of pkg-explorer" OFF )
 #
 unigw_ConfigureMakeProject(
     PROJECT_NAME wpkg
-    BUILD_TYPE   Release
+    BUILD_TYPE   ${CMAKE_BUILD_TYPE}
     CONFIG_ARGS  -DWPKG_VERSION=${UNIGW_VERSION} -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
 )
 
 if( BUILD_PKGEXPLORER )
     unigw_ConfigureMakeProject(
         PROJECT_NAME pkg-explorer
-        DEPENDS      wpkg-Release
-        BUILD_TYPE   Release
+        DEPENDS      wpkg-${CMAKE_BUILD_TYPE}
+        BUILD_TYPE   ${CMAKE_BUILD_TYPE}
         CONFIG_ARGS  -DWPKG_VERSION=${UNIGW_VERSION}
     )
 endif()
