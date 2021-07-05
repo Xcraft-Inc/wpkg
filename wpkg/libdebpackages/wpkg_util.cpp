@@ -160,10 +160,6 @@ bool is_special_windows_filename(const std::string& path_part)
  * in some ways (colons are used in versions, asterisks and
  * question marks are used in patterns.)
  *
- * Along this test we also verify that filenames do not start or
- * end with spaces. These kind of files generate problems under
- * MS-Windows and can also be problematic under Unices.
- *
  * \note
  * These characters are considered invalid only in direct filenames.
  * This is important since a URI may very well include such a name
@@ -196,12 +192,6 @@ bool is_valid_windows_filename(const std::string& filename)
             break;
 
         }
-    }
-
-    if(filename.length() > 0
-    && (isspace(filename[0]) || isspace(filename[filename.size() - 1])))
-    {
-        return false;
     }
 
     return true;
