@@ -3328,6 +3328,7 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
     const std::string arch_value(fields.get_field(arch_field));
     const wpkg_architecture::architecture arch(arch_value);
     const bool is_source(arch.is_source());
+    const bool is_unix(arch.is_unix());
 
     // check for conffiles in case it exists
     wpkg_filename::uri_filename conffiles_name(wpkg_dir.append_child("conffiles"));
@@ -3439,6 +3440,7 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
     // Linux system readme and README are two different files,
     // but that would not be so under MS-Windows.)
     std::map<case_insensitive::case_insensitive_string, memfile::memory_file::file_info> found;
+    std::map<std::string, memfile::memory_file::file_info> case_sensitive_found;
 
     // create the tarball (data.tar)
     // and since we'll be seeing all the files, get their md5sum
@@ -3488,9 +3490,19 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
                 .module(wpkg_output::module_build_package);
             continue;
         }
-        if(found.find(directory_name.full_path()) != found.end())
+        if(is_unix)
         {
-            throw wpkgar_exception_defined_twice("same filename (directory) defined twice in data archive");
+            if(case_sensitive_found.find(directory_name.full_path()) != case_sensitive_found.end())
+            {
+                throw wpkgar_exception_defined_twice("same filename (directory) defined twice in data archive (case sensitive)");
+            }
+        }
+        else
+        {
+            if(found.find(directory_name.full_path()) != found.end())
+            {
+                throw wpkgar_exception_defined_twice("same filename (directory) defined twice in data archive (case insensitive)");
+            }
         }
         info.set_uri(directory_name);
         // remove the drive letter if specified here
@@ -3514,6 +3526,7 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
         memfile::memory_file empty_data;
         append_file(data_tar, info, empty_data);
         found[directory_name.full_path()] = info;
+        case_sensitive_found[directory_name.full_path()] = info;
 
         memfile::memory_file files;
         files.dir_rewind(root, true); // recursive this time!
@@ -3550,9 +3563,19 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
                 // this is forbidden by us or the user
                 continue;
             }
-            if(found.find(filename.full_path()) != found.end())
+            if(is_unix)
             {
-                throw wpkgar_exception_defined_twice("same filename (" + filename.original_filename() + ") defined twice in data archive");
+                if(case_sensitive_found.find(filename.full_path()) != case_sensitive_found.end())
+                {
+                    throw wpkgar_exception_defined_twice("same filename (" + filename.original_filename() + ") defined twice in data archive (case sensitive)");
+                }
+            }
+            else
+            {
+                if(found.find(filename.full_path()) != found.end())
+                {
+                    throw wpkgar_exception_defined_twice("same filename (" + filename.original_filename() + ") defined twice in data archive (case insensitive)");
+                }
             }
             memfile::memory_file::file_info::file_type_t type(info.get_file_type());
             if(is_source)
@@ -3737,6 +3760,7 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
             }
             append_file(data_tar, info, input_data);
             found[filename.full_path()] = info;
+            case_sensitive_found[filename.full_path()] = info;
 
             // regular files get an md5sums
             if(type == memfile::memory_file::file_info::regular_file
