@@ -61,6 +61,8 @@
 #pragma warning(disable: 4068)
 #endif
 
+extern bool g_accept_special_windows_filename;
+
 
 namespace
 {
@@ -6639,6 +6641,10 @@ void search(command_line& cl)
     {
         cl.opt().usage(advgetopt::getopt::error, "--search expects at least one pattern or filename.\n");
         /*NOTREACHED*/
+    }
+    if(cl.opt().is_defined("accept-special-windows-filename"))
+    {
+        g_accept_special_windows_filename = true;
     }
     wpkgar::wpkgar_manager manager;
     init_manager(cl, manager, "search");
