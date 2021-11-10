@@ -3494,6 +3494,31 @@ bool uri_filename::os_unlink() const
         }
     }
 #endif
+#if defined(MO_WINDOWS) || defined(MO_CYGWIN)
+    for(int retry = 10; retry >= 1; --retry)
+    {
+        if( unlink(fname.c_str()) == 0 )
+        {
+            break;
+        }
+
+        result = false;
+
+        // the file does not exists
+        if(errno == ENOENT)
+        {
+            break;
+        }
+
+        // this is an error only if the file exists and cannot be deleted after retrying 10 times
+        if(retry == 1)
+        {
+            throw wpkg_filename_exception_io("file \"" + f_original + "\" could not be removed!");
+        }
+
+        Sleep(200);
+    }
+#else
     if( unlink(fname.c_str()) != 0 )
     {
         result = false;
@@ -3504,6 +3529,7 @@ bool uri_filename::os_unlink() const
             throw wpkg_filename_exception_io("file \"" + f_original + "\" could not be removed!");
         }
     }
+#endif
 
     // clear the cache since we know that the source file is now gone
     const_cast<uri_filename *>(this)->clear_cache();
