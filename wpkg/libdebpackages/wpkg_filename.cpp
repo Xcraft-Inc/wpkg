@@ -3460,25 +3460,26 @@ void uri_filename::os_mkdir_p(int mode) const
     }
 }
 
-bool uri_filename::os_real_unlink(const os_filename_t& path, bool no_except)
+bool uri_filename::os_real_unlink(const uri_filename& path, bool no_except)
 {
     bool result(true);
+    const auto fname( path.os_filename().get_os_string() );
 
 #ifdef MO_WINDOWS
     // Make the read-only file read-write.
     //
-    if( _wchmod( path.get_os_string().c_str(), _S_IREAD | _S_IWRITE ) == -1 )
+    if( _wchmod( fname.c_str(), _S_IREAD | _S_IWRITE ) == -1 )
     {
         if(errno != ENOENT && !no_except)
         {
-            throw wpkg_filename_exception_io("file \"" + path.get_utf8() + "\" could not be made read/write!");
+            throw wpkg_filename_exception_io("file \"" + path.f_original + "\" could not be made read/write!");
         }
     }
 #endif
 #if defined(MO_WINDOWS) || defined(MO_CYGWIN)
     for(int retry = 10; retry >= 1; --retry)
     {
-        if( unlink(path.get_os_string().c_str()) == 0 )
+        if( unlink(fname.c_str()) == 0 )
         {
             break;
         }
@@ -3491,27 +3492,33 @@ bool uri_filename::os_real_unlink(const os_filename_t& path, bool no_except)
             break;
         }
 
+        // it seems to be a directory
+        if(errno == EACCES && !no_except && path.is_dir())
+        {
+            break;
+        }
+
         // this is an error only if the file exists and cannot be deleted after retrying 10 times
         if(retry == 1)
         {
             if (no_except)
             {
-                return result;
+                break;
             }
-            throw wpkg_filename_exception_io("file \"" + path.get_utf8() + "\" could not be removed!");
+            throw wpkg_filename_exception_io("file \"" + path.f_original + "\" could not be removed!");
         }
 
         Sleep(200);
     }
 #else
-    if( unlink(path.get_os_string().c_str()) != 0 )
+    if( unlink(fname.c_str()) != 0 )
     {
         result = false;
 
         // this is an error only if the file exists and cannot be deleted
         if(errno != ENOENT && !no_except)
         {
-            throw wpkg_filename_exception_io("file \"" + path.get_utf8() + "\" could not be removed!");
+            throw wpkg_filename_exception_io("file \"" + path.f_original + "\" could not be removed!");
         }
     }
 #endif
@@ -3541,7 +3548,7 @@ bool uri_filename::os_unlink() const
 {
     bool result(true);
 
-    result = uri_filename::os_real_unlink(os_filename().get_os_string());
+    result = uri_filename::os_real_unlink(*this);
 
     // clear the cache since we know that the source file is now gone
     const_cast<uri_filename *>(this)->clear_cache();
@@ -3600,7 +3607,7 @@ bool uri_filename::os_unlink_rf(bool dryrun) const
             else
             {
                 // the real thing!
-                r = uri_filename::os_real_unlink(unlink_filename.os_filename().get_os_string(), true);
+                r = uri_filename::os_real_unlink(unlink_filename, true);
                 f_errno = errno;
                 // Under MS-Windows we may get an EACCESS error instead of EISDIR
                 // Under Darwin, we get an EPERM error when it is a directory
