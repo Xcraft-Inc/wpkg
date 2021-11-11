@@ -3628,12 +3628,22 @@ bool uri_filename::os_unlink_rf(bool dryrun) const
             // try it again
             r = u.do_unlink(*this, dryrun);
 #if defined(MO_WINDOWS) || defined(MO_CYGWIN)
-            if(!dryrun && r != 0 && (u.f_errno == ENOTEMPTY || u.f_errno == EACCES))
+            if(!dryrun)
             {
-                // under MS-Windows the closing of the directory may
-                // take time...
-                Sleep(200);
-                r = u.do_unlink(*this, dryrun);
+                for(int retry = 10; retry >= 1; --retry)
+                {
+                    if(r != 0 && (u.f_errno == ENOTEMPTY || u.f_errno == EACCES))
+                    {
+                        // under MS-Windows the closing of the directory may
+                        // take time...
+                        Sleep(200);
+                        r = u.do_unlink(*this, dryrun);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
             }
 #endif
             // MS-Windows may return EACCESS instead of ENOTEMPTY
