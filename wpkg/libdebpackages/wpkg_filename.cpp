@@ -3463,6 +3463,7 @@ void uri_filename::os_mkdir_p(int mode) const
 bool uri_filename::os_real_unlink(const os_string_t& path, bool no_except)
 {
     bool result(true);
+    os_filename_t p(path);
 
 #ifdef MO_WINDOWS
     // Make the read-only file read-write.
@@ -3471,7 +3472,7 @@ bool uri_filename::os_real_unlink(const os_string_t& path, bool no_except)
     {
         if(errno != ENOENT && !no_except)
         {
-            throw wpkg_filename_exception_io("file \"" + path + "\" could not be made read/write!");
+            throw wpkg_filename_exception_io("file \"" + p.get_utf8() + "\" could not be made read/write!");
         }
     }
 #endif
@@ -3498,7 +3499,7 @@ bool uri_filename::os_real_unlink(const os_string_t& path, bool no_except)
             {
                 return result;
             }
-            throw wpkg_filename_exception_io("file \"" + path + "\" could not be removed!");
+            throw wpkg_filename_exception_io("file \"" + p.get_utf8() + "\" could not be removed!");
         }
 
         Sleep(200);
@@ -3511,7 +3512,7 @@ bool uri_filename::os_real_unlink(const os_string_t& path, bool no_except)
         // this is an error only if the file exists and cannot be deleted
         if(errno != ENOENT && !no_except)
         {
-            throw wpkg_filename_exception_io("file \"" + path + "\" could not be removed!");
+            throw wpkg_filename_exception_io("file \"" + p.get_utf8() + "\" could not be removed!");
         }
     }
 #endif
