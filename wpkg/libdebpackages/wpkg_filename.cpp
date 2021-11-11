@@ -3460,7 +3460,7 @@ void uri_filename::os_mkdir_p(int mode) const
     }
 }
 
-bool uri_filename::os_real_unlink(const std::string& path, bool no_except)
+bool uri_filename::os_real_unlink(const os_string_t& path, bool no_except)
 {
     bool result(true);
 
@@ -3541,8 +3541,7 @@ bool uri_filename::os_unlink() const
 {
     bool result(true);
 
-    const auto fname( os_filename().get_os_string() );
-    result = uri_filename::os_real_unlink(fname.c_str());
+    result = uri_filename::os_real_unlink(os_filename().get_os_string());
 
     // clear the cache since we know that the source file is now gone
     const_cast<uri_filename *>(this)->clear_cache();
@@ -3601,7 +3600,7 @@ bool uri_filename::os_unlink_rf(bool dryrun) const
             else
             {
                 // the real thing!
-                r = uri_filename::os_real_unlink(unlink_filename.os_filename().get_os_string().c_str(), true);
+                r = uri_filename::os_real_unlink(unlink_filename.os_filename().get_os_string(), true);
                 f_errno = errno;
                 // Under MS-Windows we may get an EACCESS error instead of EISDIR
                 // Under Darwin, we get an EPERM error when it is a directory
