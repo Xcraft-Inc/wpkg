@@ -3460,26 +3460,25 @@ void uri_filename::os_mkdir_p(int mode) const
     }
 }
 
-bool uri_filename::os_real_unlink(const os_string_t& path, bool no_except)
+bool uri_filename::os_real_unlink(const os_filename_t& path, bool no_except)
 {
     bool result(true);
-    os_filename_t p(path);
 
 #ifdef MO_WINDOWS
     // Make the read-only file read-write.
     //
-    if( _wchmod( path.c_str(), _S_IREAD | _S_IWRITE ) == -1 )
+    if( _wchmod( path.get_os_string().c_str(), _S_IREAD | _S_IWRITE ) == -1 )
     {
         if(errno != ENOENT && !no_except)
         {
-            throw wpkg_filename_exception_io("file \"" + p.get_utf8() + "\" could not be made read/write!");
+            throw wpkg_filename_exception_io("file \"" + path.get_utf8() + "\" could not be made read/write!");
         }
     }
 #endif
 #if defined(MO_WINDOWS) || defined(MO_CYGWIN)
     for(int retry = 10; retry >= 1; --retry)
     {
-        if( unlink(path.c_str()) == 0 )
+        if( unlink(path.get_os_string().c_str()) == 0 )
         {
             break;
         }
@@ -3499,20 +3498,20 @@ bool uri_filename::os_real_unlink(const os_string_t& path, bool no_except)
             {
                 return result;
             }
-            throw wpkg_filename_exception_io("file \"" + p.get_utf8() + "\" could not be removed!");
+            throw wpkg_filename_exception_io("file \"" + path.get_utf8() + "\" could not be removed!");
         }
 
         Sleep(200);
     }
 #else
-    if( unlink(path.c_str()) != 0 )
+    if( unlink(path.get_os_string().c_str()) != 0 )
     {
         result = false;
 
         // this is an error only if the file exists and cannot be deleted
         if(errno != ENOENT && !no_except)
         {
-            throw wpkg_filename_exception_io("file \"" + p.get_utf8() + "\" could not be removed!");
+            throw wpkg_filename_exception_io("file \"" + path.get_utf8() + "\" could not be removed!");
         }
     }
 #endif
