@@ -249,7 +249,6 @@ public:
     int                         os_stat(file_stat& st) const;
     int                         os_lstat(file_stat& st) const;
     void                        os_mkdir_p(int mode = 0755) const;
-    static bool                 os_real_unlink(const std::string& path, bool no_except = false);
     bool                        os_unlink() const;
     bool                        os_unlink_rf(bool dryrun = false) const;
     void                        os_symlink(const uri_filename& destination) const;
