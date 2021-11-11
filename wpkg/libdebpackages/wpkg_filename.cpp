@@ -3460,6 +3460,65 @@ void uri_filename::os_mkdir_p(int mode) const
     }
 }
 
+bool uri_filename::os_real_unlink(const std::string& path, bool no_except)
+{
+    bool result(true);
+
+#ifdef MO_WINDOWS
+    // Make the read-only file read-write.
+    //
+    if( _wchmod( path.c_str(), _S_IREAD | _S_IWRITE ) == -1 )
+    {
+        if(errno != ENOENT && !no_except)
+        {
+            throw wpkg_filename_exception_io("file \"" + path + "\" could not be made read/write!");
+        }
+    }
+#endif
+#if defined(MO_WINDOWS) || defined(MO_CYGWIN)
+    for(int retry = 10; retry >= 1; --retry)
+    {
+        if( unlink(path.c_str()) == 0 )
+        {
+            break;
+        }
+
+        result = false;
+
+        // the file does not exists
+        if(errno == ENOENT)
+        {
+            break;
+        }
+
+        // this is an error only if the file exists and cannot be deleted after retrying 10 times
+        if(retry == 1)
+        {
+            if (no_except)
+            {
+                return result;
+            }
+            throw wpkg_filename_exception_io("file \"" + path + "\" could not be removed!");
+        }
+
+        Sleep(200);
+    }
+#else
+    if( unlink(path.c_str()) != 0 )
+    {
+        result = false;
+
+        // this is an error only if the file exists and cannot be deleted
+        if(errno != ENOENT && !no_except)
+        {
+            throw wpkg_filename_exception_io("file \"" + path + "\" could not be removed!");
+        }
+    }
+#endif
+
+    return result;
+}
+
 /** \brief Remove this file from the disk.
  *
  * This function removes the file from the disk. It will throw if the
@@ -3483,53 +3542,7 @@ bool uri_filename::os_unlink() const
     bool result(true);
 
     const auto fname( os_filename().get_os_string() );
-#ifdef MO_WINDOWS
-    // Make the read-only file read-write.
-    //
-    if( _wchmod( fname.c_str(), _S_IREAD | _S_IWRITE ) == -1 )
-    {
-        if(errno != ENOENT)
-        {
-            throw wpkg_filename_exception_io("file \"" + f_original + "\" could not be made read/write!");
-        }
-    }
-#endif
-#if defined(MO_WINDOWS) || defined(MO_CYGWIN)
-    for(int retry = 10; retry >= 1; --retry)
-    {
-        if( unlink(fname.c_str()) == 0 )
-        {
-            break;
-        }
-
-        result = false;
-
-        // the file does not exists
-        if(errno == ENOENT)
-        {
-            break;
-        }
-
-        // this is an error only if the file exists and cannot be deleted after retrying 10 times
-        if(retry == 1)
-        {
-            throw wpkg_filename_exception_io("file \"" + f_original + "\" could not be removed!");
-        }
-
-        Sleep(200);
-    }
-#else
-    if( unlink(fname.c_str()) != 0 )
-    {
-        result = false;
-
-        // this is an error only if the file exists and cannot be deleted
-        if(errno != ENOENT)
-        {
-            throw wpkg_filename_exception_io("file \"" + f_original + "\" could not be removed!");
-        }
-    }
-#endif
+    result = uri_filename::os_real_unlink(fname.c_str());
 
     // clear the cache since we know that the source file is now gone
     const_cast<uri_filename *>(this)->clear_cache();
@@ -3588,7 +3601,7 @@ bool uri_filename::os_unlink_rf(bool dryrun) const
             else
             {
                 // the real thing!
-                r = unlink(unlink_filename.os_filename().get_os_string().c_str());
+                r = uri_filename::os_real_unlink(unlink_filename.os_filename().get_os_string().c_str(), true);
                 f_errno = errno;
                 // Under MS-Windows we may get an EACCESS error instead of EISDIR
                 // Under Darwin, we get an EPERM error when it is a directory
