@@ -3587,6 +3587,17 @@ bool uri_filename::os_unlink_rf(bool dryrun) const
             }
             else
             {
+#ifdef MO_WINDOWS
+                // Make the read-only file read-write.
+                //
+                if( _wchmod( unlink_filename.os_filename().get_os_string().c_str(), _S_IREAD | _S_IWRITE ) == -1 )
+                {
+                    if(errno != ENOENT)
+                    {
+                        fprintf(stderr, "uri_filename::os_unlink_rf(\"%s\", true); file could not be made read/write!\n", unlink_filename.original_filename().c_str());
+                    }
+                }
+#endif
                 // the real thing!
                 r = unlink(unlink_filename.os_filename().get_os_string().c_str());
                 f_errno = errno;
