@@ -8,7 +8,7 @@ if ( MSVC )
     set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE" )
 endif()
 
-set ( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DZSTD_MULTITHREAD" )
+set ( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DZSTD_MULTITHREAD -DDYNAMIC_BMI2=0" )
 
 set(ZSTD_PUBLIC_HDRS
     lib/zdict.h
@@ -41,6 +41,7 @@ add_library( ${PROJECT_NAME} STATIC
     lib/compress/zstd_opt.c
     lib/compress/zstdmt_compress.c
     lib/decompress/huf_decompress.c
+    lib/decompress/huf_decompress_amd64.S
     lib/decompress/zstd_ddict.c
     lib/decompress/zstd_decompress_block.c
     lib/decompress/zstd_decompress.c
@@ -92,6 +93,7 @@ add_library( ${PROJECT_NAME} SHARED
     lib/compress/zstd_opt.c
     lib/compress/zstdmt_compress.c
     lib/decompress/huf_decompress.c
+    lib/decompress/huf_decompress_amd64.S
     lib/decompress/zstd_ddict.c
     lib/decompress/zstd_decompress_block.c
     lib/decompress/zstd_decompress.c
