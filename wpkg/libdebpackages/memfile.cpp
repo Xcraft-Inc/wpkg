@@ -820,6 +820,9 @@ public:
         ZSTD_CCtx_setParameter(f_cctx, ZSTD_c_compressionLevel, zstlevel);
         ZSTD_CCtx_setParameter(f_cctx, ZSTD_c_checksumFlag, 1);
         ZSTD_CCtx_setParameter(f_cctx, ZSTD_c_nbWorkers, 4);
+#if 0
+        ZSTD_CCtx_setParameter(f_cctx, ZSTD_c_rsyncable, 1);
+#endif /* 0 */
     }
 
     ~zst_deflate()
