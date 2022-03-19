@@ -428,11 +428,12 @@ char get_any_char(const char *& s, bool decode)
         // the + is used to represent a space (although this is the "old"
         // scheme, it still needs to be supported); to include a + in a
         // filename, use the %2B encoding
-        if(*s == '+')
-        {
-            ++s;
-            return ' ';
-        }
+        // DISABLE THIS OLD STUFF
+        //if(*s == '+')
+        //{
+        //    ++s;
+        //    return ' ';
+        //}
 
         if(*s == '%'
         && isxdigit(s[1])
