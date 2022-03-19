@@ -1701,7 +1701,7 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
         do
         {
             std::string name(uri.path_only());
-            replace(name, "+", "%2B");
+            replace(name, " ", "%2B"); // FIXME: restore '+' which was converted to a space
             redirect = false;
             location.clear();
             int port_number(80);
