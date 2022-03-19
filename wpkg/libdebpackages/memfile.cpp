@@ -85,20 +85,6 @@
 #endif
 
 
-void replace(std::string& out, const std::string& pattern, const std::string& replacement)
-{
-    for(;;)
-    {
-        std::string::size_type pos(out.find(pattern));
-        if(pos == std::string::npos)
-        {
-            break;
-        }
-        out.replace(pos, pattern.length(), replacement);
-    }
-}
-
-
 /** \brief The memory file namespace.
  *
  * This namespace is used to declare and implement all the memory file
@@ -1701,7 +1687,6 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
         do
         {
             std::string name(uri.path_only());
-            //replace(name, " ", "%2B"); // FIXME: restore '+' which was converted to a space
             redirect = false;
             location.clear();
             int port_number(80);

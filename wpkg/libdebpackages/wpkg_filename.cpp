@@ -429,11 +429,11 @@ char get_any_char(const char *& s, bool decode)
         // scheme, it still needs to be supported); to include a + in a
         // filename, use the %2B encoding
         // DISABLE THIS OLD STUFF
-        //if(*s == '+')
-        //{
-        //    ++s;
-        //    return ' ';
-        //}
+        // if(*s == '+')
+        // {
+        //     ++s;
+        //     return ' ';
+        // }
 
         if(*s == '%'
         && isxdigit(s[1])
