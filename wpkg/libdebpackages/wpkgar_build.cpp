@@ -1883,9 +1883,12 @@ void wpkgar_build::prepare_cmd(std::string& cmd, const wpkg_filename::uri_filena
 #endif
     cmd += wpkg_util::make_safe_console_string(dir.full_path());
 #if defined(MO_WINDOWS)
-    cmd += " && set PATH=";
-    cmd += wpkg_util::make_safe_console_string(f_manager->get_inst_path().append_safe_child(f_install_prefix).append_child("bin").full_path());
-    cmd += ";%PATH%";
+    if(!f_install_prefix.empty())
+    {
+        cmd += " && set PATH=";
+        cmd += wpkg_util::make_safe_console_string(f_manager->get_inst_path().append_safe_child(f_install_prefix).append_child("bin").full_path());
+        cmd += ";%PATH%";
+    }
     cmd += " && set WPKG_ROOTDIR=";
     cmd += wpkg_util::make_safe_console_string(f_manager->get_root_path().full_path());
     cmd += " && set WPKG_INSTDIR=";
@@ -1893,14 +1896,17 @@ void wpkgar_build::prepare_cmd(std::string& cmd, const wpkg_filename::uri_filena
     cmd += " && set WPKG_ADMINDIR=";
     cmd += wpkg_util::make_safe_console_string(f_manager->get_database_path().full_path());
 #else
-    cmd += " && export PATH=";
-    cmd += wpkg_util::make_safe_console_string(f_manager->get_inst_path().append_safe_child(f_install_prefix).append_child("bin").full_path());
-    cmd += ":$PATH";
-    cmd += " && export LD_LIBRARY_PATH=";
-    cmd += wpkg_util::make_safe_console_string(f_manager->get_inst_path().append_safe_child(f_install_prefix).append_child("lib").full_path());
-    if(getenv("LD_LIBRARY_PATH") != NULL)
+    if(!f_install_prefix.empty())
     {
-        cmd += ":$LD_LIBRARY_PATH";
+        cmd += " && export PATH=";
+        cmd += wpkg_util::make_safe_console_string(f_manager->get_inst_path().append_safe_child(f_install_prefix).append_child("bin").full_path());
+        cmd += ":$PATH";
+        cmd += " && export LD_LIBRARY_PATH=";
+        cmd += wpkg_util::make_safe_console_string(f_manager->get_inst_path().append_safe_child(f_install_prefix).append_child("lib").full_path());
+        if(getenv("LD_LIBRARY_PATH") != NULL)
+        {
+            cmd += ":$LD_LIBRARY_PATH";
+        }
     }
     cmd += " && export WPKG_ROOTDIR=";
     cmd += wpkg_util::make_safe_console_string(f_manager->get_root_path().full_path());
