@@ -2690,6 +2690,15 @@ int wpkgar_build::update_and_upgrade()
         cmd += f_manager->get_database_path().full_path();
         cmd += " --" + step + " ";
 
+        if(step == "upgrade")
+        {
+            if(g_accept_special_windows_filename)
+            {
+                cmd += " --accept-special-windows-filename";
+            }
+            cmd += " --force-file-info";
+        }
+
         // keep the same debug flags for sub-calls
         cmd += " --debug ";
         std::stringstream integer;
