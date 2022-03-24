@@ -2925,8 +2925,9 @@ void wpkgar_build::build_repository()
                     cmd += f_manager->get_inst_path().full_path();
                     cmd += " --admindir ";
                     cmd += f_manager->get_database_path().full_path();
-                    cmd += " --build ";
+                    cmd += " --build-and-install ";
                     cmd += sources[i]->f_filename.full_path();
+                    cmd += " --skip-same-version ";
                     if(!f_install_prefix.empty())
                     {
                         cmd += " --install-prefix ";
