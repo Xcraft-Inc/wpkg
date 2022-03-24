@@ -47,6 +47,7 @@
 #include    "libdebpackages/wpkg_copyright.h"
 #include    "libdebpackages/wpkg_architecture.h"
 #include    "libdebpackages/debian_packages.h"
+#include    <array>
 #include    <stdlib.h>
 #include    <sstream>
 #include    <iostream>
