@@ -149,6 +149,8 @@ private:
     void run_project_unit_tests();
     void build_project_packages();
     void build_packages();
+    void update();
+    void upgrade();
     void build_repository();
     void build_info();
     void build_deb(const wpkg_filename::uri_filename& dir_name);

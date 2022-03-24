@@ -2673,6 +2673,80 @@ void wpkgar_build::build_packages()
 
 
 
+void wpkgar_build::update()
+{
+    std::string cmd(f_program_fullname);
+    cmd += " ";
+    cmd += " --root ";
+    cmd += f_manager->get_root_path().full_path();
+    cmd += " --instdir ";
+    cmd += f_manager->get_inst_path().full_path();
+    cmd += " --admindir ";
+    cmd += f_manager->get_database_path().full_path();
+    cmd += " --update ";
+
+    // keep the same debug flags for sub-calls
+    cmd += " --debug ";
+    std::stringstream integer;
+    integer << wpkg_output::get_output()->get_debug_flags();
+    cmd += integer.str();
+
+    wpkg_output::log("system(%1).")
+            .quoted_arg(cmd)
+        .level(wpkg_output::level_info)
+        .module(wpkg_output::module_run_script)
+        .action("build-package-update");
+
+    const int r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        wpkg_output::log("system(%1) called returned %2")
+                .quoted_arg(cmd)
+                .arg(r)
+            .level(wpkg_output::level_error)
+            .module(wpkg_output::module_run_script)
+            .action("build-package-update");
+    }
+}
+
+void wpkgar_build::upgrade()
+{
+    std::string cmd(f_program_fullname);
+    cmd += " ";
+    cmd += " --root ";
+    cmd += f_manager->get_root_path().full_path();
+    cmd += " --instdir ";
+    cmd += f_manager->get_inst_path().full_path();
+    cmd += " --admindir ";
+    cmd += f_manager->get_database_path().full_path();
+    cmd += " --upgrade ";
+
+    // keep the same debug flags for sub-calls
+    cmd += " --debug ";
+    std::stringstream integer;
+    integer << wpkg_output::get_output()->get_debug_flags();
+    cmd += integer.str();
+
+    wpkg_output::log("system(%1).")
+            .quoted_arg(cmd)
+        .level(wpkg_output::level_info)
+        .module(wpkg_output::module_run_script)
+        .action("build-package-upgrade");
+
+    const int r(system(cmd.c_str()));
+    if(r != 0)
+    {
+        wpkg_output::log("system(%1) called returned %2")
+                .quoted_arg(cmd)
+                .arg(r)
+            .level(wpkg_output::level_error)
+            .module(wpkg_output::module_run_script)
+            .action("build-package-upgrade");
+    }
+}
+
+
+
 /** \brief Build the source packages from a repository.
  *
  * This function goes through all the source packages found in a sources
@@ -2925,9 +2999,8 @@ void wpkgar_build::build_repository()
                     cmd += f_manager->get_inst_path().full_path();
                     cmd += " --admindir ";
                     cmd += f_manager->get_database_path().full_path();
-                    cmd += " --build-and-install ";
+                    cmd += " --build ";
                     cmd += sources[i]->f_filename.full_path();
-                    cmd += " --skip-same-version ";
                     if(!f_install_prefix.empty())
                     {
                         cmd += " --install-prefix ";
@@ -3026,6 +3099,9 @@ void wpkgar_build::build_repository()
                         repeat = true;
                         sources[i]->f_status = source_t::built;
                     }
+
+                    update();
+                    upgrade();
                 }
             }
         }
