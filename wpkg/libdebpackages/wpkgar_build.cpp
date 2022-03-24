@@ -2673,76 +2673,48 @@ void wpkgar_build::build_packages()
 
 
 
-void wpkgar_build::update()
+int wpkgar_build::update_and_upgrade()
 {
-    std::string cmd(f_program_fullname);
-    cmd += " ";
-    cmd += " --root ";
-    cmd += f_manager->get_root_path().full_path();
-    cmd += " --instdir ";
-    cmd += f_manager->get_inst_path().full_path();
-    cmd += " --admindir ";
-    cmd += f_manager->get_database_path().full_path();
-    cmd += " --update ";
+    std::array<std::string, 2> steps = {"update", "upgrade"};
 
-    // keep the same debug flags for sub-calls
-    cmd += " --debug ";
-    std::stringstream integer;
-    integer << wpkg_output::get_output()->get_debug_flags();
-    cmd += integer.str();
-
-    wpkg_output::log("system(%1).")
-            .quoted_arg(cmd)
-        .level(wpkg_output::level_info)
-        .module(wpkg_output::module_run_script)
-        .action("build-package-update");
-
-    const int r(system(cmd.c_str()));
-    if(r != 0)
+    for(const auto & step: steps)
     {
-        wpkg_output::log("system(%1) called returned %2")
+        std::string cmd(f_program_fullname);
+        cmd += " ";
+        cmd += " --root ";
+        cmd += f_manager->get_root_path().full_path();
+        cmd += " --instdir ";
+        cmd += f_manager->get_inst_path().full_path();
+        cmd += " --admindir ";
+        cmd += f_manager->get_database_path().full_path();
+        cmd += " --" + step + " ";
+
+        // keep the same debug flags for sub-calls
+        cmd += " --debug ";
+        std::stringstream integer;
+        integer << wpkg_output::get_output()->get_debug_flags();
+        cmd += integer.str();
+
+        wpkg_output::log("system(%1).")
                 .quoted_arg(cmd)
-                .arg(r)
-            .level(wpkg_output::level_error)
+            .level(wpkg_output::level_info)
             .module(wpkg_output::module_run_script)
-            .action("build-package-update");
+            .action("build-package");
+
+        const int r(system(cmd.c_str()));
+        if(r != 0)
+        {
+            wpkg_output::log("system(%1) called returned %2")
+                    .quoted_arg(cmd)
+                    .arg(r)
+                .level(wpkg_output::level_error)
+                .module(wpkg_output::module_run_script)
+                .action("build-package");
+            return r;
+        }
     }
-}
 
-void wpkgar_build::upgrade()
-{
-    std::string cmd(f_program_fullname);
-    cmd += " ";
-    cmd += " --root ";
-    cmd += f_manager->get_root_path().full_path();
-    cmd += " --instdir ";
-    cmd += f_manager->get_inst_path().full_path();
-    cmd += " --admindir ";
-    cmd += f_manager->get_database_path().full_path();
-    cmd += " --upgrade ";
-
-    // keep the same debug flags for sub-calls
-    cmd += " --debug ";
-    std::stringstream integer;
-    integer << wpkg_output::get_output()->get_debug_flags();
-    cmd += integer.str();
-
-    wpkg_output::log("system(%1).")
-            .quoted_arg(cmd)
-        .level(wpkg_output::level_info)
-        .module(wpkg_output::module_run_script)
-        .action("build-package-upgrade");
-
-    const int r(system(cmd.c_str()));
-    if(r != 0)
-    {
-        wpkg_output::log("system(%1) called returned %2")
-                .quoted_arg(cmd)
-                .arg(r)
-            .level(wpkg_output::level_error)
-            .module(wpkg_output::module_run_script)
-            .action("build-package-upgrade");
-    }
+    return 0;
 }
 
 
@@ -3100,8 +3072,11 @@ void wpkgar_build::build_repository()
                         sources[i]->f_status = source_t::built;
                     }
 
-                    update();
-                    upgrade();
+                    const int rc = update_and_upgrade();
+                    if(rc)
+                    {
+                        throw wpkgar_exception("the root cannot be updated.");
+                    }
                 }
             }
         }
