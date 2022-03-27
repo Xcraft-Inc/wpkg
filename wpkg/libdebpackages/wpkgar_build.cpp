@@ -2687,6 +2687,12 @@ int wpkgar_build::update_and_upgrade()
         cmd += " --instdir ";
         cmd += f_manager->get_inst_path().full_path();
         cmd += " --admindir ";
+        const std::string& tmpdir(wpkg_filename::temporary_uri_filename::get_tmpdir());
+        if(!tmpdir.empty())
+        {
+            cmd += " --tmpdir ";
+            cmd += wpkg_util::make_safe_console_string(tmpdir);
+        }
         cmd += f_manager->get_database_path().full_path();
         cmd += " --" + step + " ";
 
