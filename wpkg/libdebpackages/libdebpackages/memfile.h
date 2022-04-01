@@ -308,7 +308,7 @@ public:
 
     // access files in 'ar', 'tar', 'zip', '7z', or 'wpkgar' archives
     // as well as disk directories
-    void dir_rewind(const wpkg_filename::uri_filename& path = wpkg_filename::uri_filename(), bool recursive = true);
+    void dir_rewind(const wpkg_filename::uri_filename& path = wpkg_filename::uri_filename(), bool recursive = true, int depth = 0);
     int64_t dir_pos() const;
     bool dir_next(file_info& info, memory_file *data = NULL) const;
     int64_t dir_size(const wpkg_filename::uri_filename& path, int64_t& disk_size, int block_size = 512);
@@ -349,6 +349,7 @@ private:
     controlled_vars::fbool_t                    f_loaded;
     controlled_vars::fbool_t                    f_directory;
     controlled_vars::tbool_t                    f_recursive;
+    controlled_vars::zint32_t                   f_depth;
     controlled_vars::zint64_t                   f_dir_size;
     mutable std::shared_ptr<wpkg_filename::os_dir>   f_dir;
     mutable std::vector<std::shared_ptr<wpkg_filename::os_dir> >  f_dir_stack;

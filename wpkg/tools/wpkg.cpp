@@ -1180,6 +1180,14 @@ const advgetopt::getopt::option wpkg_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "depth",
+        0,
+        "while creating an index (--recursive), limit depth for recursion; default is 0 (unlimited)",
+        advgetopt::getopt::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
         "dry-run",
         NULL,
         "run all the validations of the command, do not actually run the process",
@@ -4213,6 +4221,11 @@ void create_index(command_line& cl)
     init_manager(cl, manager, "create-index");
 
     pkg_repository.set_parameter(wpkgar::wpkgar_repository::wpkgar_repository_recursive, cl.opt().is_defined("recursive"));
+
+    if(cl.opt().is_defined("depth"))
+    {
+        pkg_repository.set_parameter(wpkgar::wpkgar_repository::wpkgar_repository_recursive_depth, cl.opt().get_long("depth"));
+    }
 
     // check for a set of repository names
     if(manager.get_repositories().empty())

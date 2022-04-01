@@ -498,7 +498,7 @@ void wpkgar_repository::create_index(memfile::memory_file& index_file, const std
                                                        ++it)
     {
         memfile::memory_file r;
-        r.dir_rewind(*it, get_parameter(wpkgar_repository_recursive, false) != 0);
+        r.dir_rewind(*it, get_parameter(wpkgar_repository_recursive, false) != 0, get_parameter(wpkgar_repository_recursive_depth, 0));
         for(;;)
         {
             wpkg_filename::uri_filename filename;

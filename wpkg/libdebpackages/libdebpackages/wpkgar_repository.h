@@ -41,7 +41,8 @@ class DEBIAN_PACKAGE_EXPORT wpkgar_repository
 public:
     enum parameter_t
     {
-        wpkgar_repository_recursive              // read sub-directories of repositories
+        wpkgar_repository_recursive,             // read sub-directories of repositories
+        wpkgar_repository_recursive_depth
     };
 
     class DEBIAN_PACKAGE_EXPORT index_entry

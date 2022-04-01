@@ -2124,6 +2124,7 @@ void memory_file::reset()
     f_loaded = false;
     f_directory = false;
     f_recursive = true;
+    f_depth = 0;
     f_dir.reset();
     f_dir_stack.clear();
     f_dir_pos = 0;
@@ -2335,7 +2336,7 @@ int64_t memory_file::size() const
     }
 }
 
-void memory_file::dir_rewind(const wpkg_filename::uri_filename& path, bool recursive)
+void memory_file::dir_rewind(const wpkg_filename::uri_filename& path, bool recursive, int depth)
 {
     f_dir.reset();
 
@@ -2344,6 +2345,7 @@ void memory_file::dir_rewind(const wpkg_filename::uri_filename& path, bool recur
     {
         f_format = file_format_directory;
         f_recursive = recursive;
+        f_depth = depth;
         f_dir.reset(new wpkg_filename::os_dir(path));
         f_dir_size = 1;
     }
@@ -2351,6 +2353,7 @@ void memory_file::dir_rewind(const wpkg_filename::uri_filename& path, bool recur
     {
         // that does not really apply in this case
         f_recursive = false;
+        f_depth = 0;
     }
 
     // in case of an ar archive we want to skip the magic code
@@ -2678,7 +2681,7 @@ bool memory_file::dir_next_dir(file_info& info) const
     }
 
     memory_file::disk_file_to_info(file, info);
-    if(f_recursive && info.get_file_type() == file_info::directory)
+    if(f_recursive && info.get_file_type() == file_info::directory && (f_depth == 0 || f_dir_stack.size() < f_depth))
     {
         // never recurse through the "." and ".." folders
         std::string bn(info.get_basename());
