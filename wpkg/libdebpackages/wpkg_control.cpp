@@ -383,7 +383,7 @@ bool control_file::contents_control_file_state_t::reading_contents() const
  */
 wpkg_dependencies::dependencies control_file::get_dependencies(const std::string& name) const
 {
-    wpkg_dependencies::dependencies d(get_field(name));
+    wpkg_dependencies::dependencies d(get_field(name), name);
     return d;
 }
 

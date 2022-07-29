@@ -81,7 +81,7 @@ public:
         std::vector<std::string>        f_architectures;
     };
 
-    dependencies(const std::string& dependency_field);
+    dependencies(const std::string& dependency_field, const std::string& dependency_field_name = std::string());
 
     int size() const;
     const dependency_t& get_dependency(int idx);

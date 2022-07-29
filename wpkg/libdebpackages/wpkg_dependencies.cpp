@@ -249,11 +249,11 @@ void dependencies::dependency_t::reverse_operator()
  * function throws an error since that string cannot be represented properly in
  * this dependencies object.
  */
-dependencies::dependencies(const std::string& dependency_field)
+dependencies::dependencies(const std::string& dependency_field, const std::string& dependency_field_name)
     //: f_dependencies -- auto-init
 {
     // TBD: allow for multiple commas in a row? (wpkg, , , libz)
-    const char *s(dependency_field.c_str()); 
+    const char *s(dependency_field.c_str());
     for(;;)
     {
         while(isspace(*s))
@@ -279,7 +279,7 @@ dependencies::dependencies(const std::string& dependency_field)
         }
         dependency_t d;
         d.f_name.assign(start, s - start);
-        if(!wpkg_util::is_package_name(d.f_name))
+        if(dependency_field_name.compare(0, 7, "X-Craft") != 0 && !wpkg_util::is_package_name(d.f_name))
         {
             throw wpkg_dependencies_exception_invalid("a dependency package name is not valid");
         }
