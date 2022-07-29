@@ -87,7 +87,12 @@ void add_nodes(node_names_t& nodes, node_names_t& deps, const std::string field_
                         info.f_filename = dep.f_name;
                         info.f_nodecount = node_count;
                         deps.push_back(info);
-                        dot.printf("n%d [label=\"%s\",shape=box,style=\"rounded,dashed\"];\n", node_count, dep.f_name.c_str());
+                        const auto at = dep.f_name.find('@');
+                        if(at == std::string::npos){
+                            dot.printf("n%d [label=\"%s\",shape=box,style=\"rounded,dashed\"];\n", node_count, dep.f_name.c_str());
+                        }else{
+                            dot.printf("n%d [label=\"%s\\n[%s]\",shape=box,style=\"rounded,dashed,filled\",fillcolor=\"#ddfbff\"];\n", node_count, dep.f_name.substr(at + 1).c_str(), dep.f_name.substr(1, at - 1).c_str());
+                        }
                         ++node_count;
                         packages = find_nodes(deps, dep.f_name);
                     }
