@@ -4076,6 +4076,9 @@ void wpkgar_install::validate_dependencies()
                         .level(wpkg_output::level_error)
                         .module(wpkg_output::module_validate_installation)
                         .action("install-validation");
+                    // output the tree and the best
+                    output_tree(static_cast<int>(tree_gen.tree_number()), tree, "tree");
+                    output_tree(static_cast<int>(tree_gen.tree_number()) + 1, best, "best");
                 }
                 else if(r > 0)
                 {
