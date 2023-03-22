@@ -6059,7 +6059,7 @@ void list(command_line& cl)
             const std::string version(manager.get_field(*it, "Version"));
             std::string long_description;
             const std::string description(manager.get_description(*it, "Description", long_description));
-            printf("%s %-37.37s %-32.32s %-70.70s\n", flags,
+            printf("%s %-37s %-32s %-70s\n", flags,
                     it->c_str(), version.c_str(), description.c_str());
         }
         catch(const std::exception& e)
