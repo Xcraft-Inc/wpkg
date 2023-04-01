@@ -1779,7 +1779,7 @@ void wpkgar_install::validate_distribution()
                         // to be install on a target root with a distribution name like
                         // my_distribution+special.
                         size_t sep(std::string::npos);
-                        if((sep = distribution.find("+")) != std::string::npos && d.compare(0, sep, distribution) == 0)
+                        if((sep = distribution.find("+")) != std::string::npos && d.compare(0, sep, distribution, 0, d.length() - 1) == 0)
                         {
                             wpkg_output::log("package %1 is compatible with your installation target, it is for the base distribution: %2, your target is %3.")
                                     .quoted_arg(filename)
