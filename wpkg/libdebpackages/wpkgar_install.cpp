@@ -1775,7 +1775,22 @@ void wpkgar_install::validate_distribution()
                     const std::string d(package.get_field("Distribution"));
                     if(d != distribution)
                     {
-                        if(get_parameter(wpkgar_install_force_distribution, false))
+                        // It's a special check where we accept package like my_distribution
+                        // to be install on a target root with a distribution name like
+                        // my_distribution+special.
+                        size_t sep(std::string::npos);
+                        if((sep = distribution.find("+")) != std::string::npos && d.compare(0, sep, distribution) == 0)
+                        {
+                            wpkg_output::log("package %1 is compatible with your installation target, it is for the base distribution: %2, your target is %3.")
+                                    .quoted_arg(filename)
+                                    .quoted_arg(d)
+                                    .quoted_arg(distribution)
+                                .level(wpkg_output::level_warning)
+                                .module(wpkg_output::module_validate_installation)
+                                .package(filename)
+                                .action("install-validation");
+                        }
+                        else if(get_parameter(wpkgar_install_force_distribution, false))
                         {
                             wpkg_output::log("package %1 may not be compatible with your installation target, it is for a different distribution: %2 instead of %3.")
                                     .quoted_arg(filename)
