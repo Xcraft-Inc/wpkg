@@ -332,8 +332,19 @@ struct debian_version_t
     static int compare_parts(const std::vector<debian_version_part_t>& a, const std::vector<debian_version_part_t>& b)
     {
         std::vector<debian_version_part_t>::size_type idx;
-        for(idx = 0; idx < a.size() && idx < b.size(); ++idx)
+        for(idx = 0; idx < a.size() || idx < b.size(); ++idx)
         {
+            debian_version_part_t p;
+            if(idx >= a.size())
+            {
+                int r(p.compare(b[idx]));
+                return r;
+            }
+            if(idx >= b.size())
+            {
+                int r(a[idx].compare(p));
+                return r;
+            }
             int r(a[idx].compare(b[idx]));
             if(r != 0)
             {
