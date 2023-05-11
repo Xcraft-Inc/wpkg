@@ -337,13 +337,23 @@ struct debian_version_t
             debian_version_part_t p;
             if(idx >= a.size())
             {
+                p.f_val = b[idx].f_val == -1 ? -1 : 0;
                 int r(p.compare(b[idx]));
-                return r;
+                if(r != 0)
+                {
+                    return r;
+                }
+                continue;
             }
             if(idx >= b.size())
             {
+                p.f_val = a[idx].f_val == -1 ? -1 : 0;
                 int r(a[idx].compare(p));
-                return r;
+                if(r != 0)
+                {
+                    return r;
+                }
+                continue;
             }
             int r(a[idx].compare(b[idx]));
             if(r != 0)
