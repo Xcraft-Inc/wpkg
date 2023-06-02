@@ -334,7 +334,7 @@ public:
         command_listfiles,
         command_list_hooks,
         command_list_index_packages,
-        command_list_index_packages_extra,
+        command_list_index_packages_json,
         command_list_sources,
         command_max_version,
         command_md5sums,
@@ -812,9 +812,9 @@ const advgetopt::getopt::option wpkg_options[] =
     {
         '\0',
         0,
-        "list-index-packages-extra",
+        "list-index-packages-json",
         NULL,
-        "displays the list of packages from a package index with extra fields (see --create-index)",
+        "displays the list of packages from a package index with extra fields as a JSON output (see --create-index)",
         advgetopt::getopt::required_multiple_argument
     },
     {
@@ -2529,9 +2529,9 @@ command_line::command_line(int argc, char *argv[], std::vector<std::string> conf
     {
         set_command(command_list_index_packages);
     }
-    if(f_opt.is_defined("list-index-packages-extra"))
+    if(f_opt.is_defined("list-index-packages-json"))
     {
-        set_command(command_list_index_packages_extra);
+        set_command(command_list_index_packages_json);
     }
     if(f_opt.is_defined("list-sources"))
     {
@@ -6235,52 +6235,68 @@ void list_index_packages(command_line& cl)
     }
 }
 
-void list_index_packages_extra(command_line& cl)
+void list_index_packages_json(command_line& cl)
 {
     if(cl.size() != 0)
     {
         std::cerr << "error:"
             << cl.opt().get_program_name()
-            << ": --list-index-packages-extra does not take extra parameters."
+            << ": --list-index-packages-json does not take extra parameters."
             << std::endl;
         exit(1);
     }
 
-    int const max(cl.opt().size("list-index-packages-extra"));
+    int const max(cl.opt().size("list-index-packages-json"));
     if(max == 0)
     {
         std::cerr << "error:"
             << cl.opt().get_program_name()
-            << ": --list-index-packages-extra expects at least one package index name."
+            << ": --list-index-packages-json expects at least one package index name."
             << std::endl;
         exit(1);
     }
     wpkgar::wpkgar_manager manager;
-    init_manager(cl, manager, "list-index-packages-extra");
+    init_manager(cl, manager, "list-index-packages-json");
     wpkgar::wpkgar_lock lock_wpkg(&manager, "Listing");
 
+    printf("[");
     for(int i(0); i < max; ++i)
     {
-        const std::string& name(cl.opt().get_string("list-index-packages-extra", i));
+        const std::string& name(cl.opt().get_string("list-index-packages-json", i));
         memfile::memory_file package_index;
         package_index.read_file(name);
         wpkgar::wpkgar_repository repository(&manager);
         wpkgar::wpkgar_repository::entry_vector_t entries;
         repository.load_index(package_index, entries);
 
+        printf("{\"%s\":{\n", name.c_str());
         for(wpkgar::wpkgar_repository::entry_vector_t::const_iterator it(entries.begin()); it != entries.end(); ++it)
         {
             wpkg_control::binary_control_file ctrl(std::shared_ptr<wpkg_control::control_file::control_file_state_t>(new wpkg_control::control_file::control_file_state_t));
             ctrl.set_input_file(&*it->f_control);
             ctrl.read();
 
-            printf("size=\"%d\" date=\"%s\" filename=\"%s\" distribution=\"%s\"\n",
+            printf(
+              "\"%s\":{"
+                 "\"size\":%ld,"
+                 "\"date\":\"%s\","
+                 "\"name\":\"%s\","
+                 "\"architecture\":\"%s\","
+                 "\"version\":\"%s\","
+                 "\"distribution\":\"%s\""
+              "}%s\n",
+                 it->f_info.get_filename().c_str(),
                  it->f_info.get_size(),
                  it->f_info.get_date().c_str(),
-                 it->f_info.get_filename().c_str(),
-                 ctrl.get_field("Distribution").c_str());
+                 ctrl.get_field("Package").c_str(),
+                 ctrl.get_field("Architecture").c_str(),
+                 ctrl.get_field("Version").c_str(),
+                 ctrl.get_field("Distribution").c_str(),
+                 it+1 != entries.end() ? "," : "");
         }
+        printf("}}%s\n", i < max-1 ? "," : "");
     }
+    printf("]\n");
 }
 
 void list_sources(command_line& cl)
@@ -7318,8 +7334,8 @@ int main(int argc, char *argv[])
             list_index_packages(cl);
             break;
 
-        case command_line::command_list_index_packages_extra:
-            list_index_packages_extra(cl);
+        case command_line::command_list_index_packages_json:
+            list_index_packages_json(cl);
             break;
 
         case command_line::command_list_sources:
