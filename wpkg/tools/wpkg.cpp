@@ -6259,7 +6259,7 @@ void list_index_packages_json(command_line& cl)
     init_manager(cl, manager, "list-index-packages-json");
     wpkgar::wpkgar_lock lock_wpkg(&manager, "Listing");
 
-    printf("[");
+    printf("{");
     for(int i(0); i < max; ++i)
     {
         const std::string& name(cl.opt().get_string("list-index-packages-json", i));
@@ -6269,7 +6269,7 @@ void list_index_packages_json(command_line& cl)
         wpkgar::wpkgar_repository::entry_vector_t entries;
         repository.load_index(package_index, entries);
 
-        printf("{\"%s\":{\n", name.c_str());
+        printf("\"%s\":{\n", name.c_str());
         for(wpkgar::wpkgar_repository::entry_vector_t::const_iterator it(entries.begin()); it != entries.end(); ++it)
         {
             wpkg_control::binary_control_file ctrl(std::shared_ptr<wpkg_control::control_file::control_file_state_t>(new wpkg_control::control_file::control_file_state_t));
@@ -6294,9 +6294,9 @@ void list_index_packages_json(command_line& cl)
                  ctrl.get_field("Distribution").c_str(),
                  it+1 != entries.end() ? "," : "");
         }
-        printf("}}%s\n", i < max-1 ? "," : "");
+        printf("}%s\n", i < max-1 ? "," : "");
     }
-    printf("]\n");
+    printf("}\n");
 }
 
 void list_sources(command_line& cl)
