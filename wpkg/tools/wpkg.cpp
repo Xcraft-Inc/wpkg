@@ -6285,7 +6285,7 @@ void list_index_packages_json(command_line& cl)
                  "\"version\":\"%s\","
                  "\"distribution\":\"%s\""
               "}%s\n",
-                 it->f_info.get_filename().c_str(),
+                 wpkg_output::make_raw_message_parsable(it->f_info.get_filename()).c_str(),
                  it->f_info.get_size(),
                  it->f_info.get_date().c_str(),
                  ctrl.get_field("Package").c_str(),
