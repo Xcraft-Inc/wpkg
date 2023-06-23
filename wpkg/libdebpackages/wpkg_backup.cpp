@@ -136,6 +136,11 @@ bool wpkgar_backup::backup(const wpkg_filename::uri_filename& filename)
     {
         // TODO:
         // recursively backup the directory!!!
+        wpkg_output::log("directory %1 could not be backed up.")
+                .quoted_arg(filename)
+            .level(wpkg_output::level_error)
+            .module(wpkg_output::module_unpack_package)
+            .action(f_log_action);
         throw std::runtime_error("backup directory not implemented");
     }
 
