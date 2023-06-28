@@ -35,6 +35,7 @@
 #include    <algorithm>
 #include    <stdarg.h>
 #include    <errno.h>
+#include    <filesystem>
 #if defined(MO_LINUX)
 #   include    <mntent.h>
 #   include    <sys/statvfs.h>
@@ -1527,6 +1528,7 @@ bool wpkgar_remove::do_remove(package_item_t *item)
         f_manager->set_field(item->get_name(), "X-Remove-Date", wpkg_util::rfc2822_date(), true);
 
         {
+            std::vector<std::pair<std::string, std::string>> directories;
             std::string package_name(item->get_filename());
             memfile::memory_file data;
             std::string data_filename("data.tar");
@@ -1565,15 +1567,14 @@ bool wpkgar_remove::do_remove(package_item_t *item)
                     destination.os_unlink();
 
                     wpkg_output::log("%1 removed...")
-                            .quoted_arg(destination)
+                            .quoted_arg(destination.path_only())
                         .debug(wpkg_output::debug_flags::debug_files)
                         .module(wpkg_output::module_remove_package)
                         .package(package_name);
                     break;
-
+                    
                 case memfile::memory_file::file_info::directory:
-                    // TODO: check whether the directory is empty, if so
-                    //       remove it too
+                    directories.push_back(std::make_pair<std::string, std::string>(destination.os_filename().get_os_string(), filename.c_str()));
                     break;
 
                 default:
@@ -1589,6 +1590,25 @@ bool wpkgar_remove::do_remove(package_item_t *item)
                     break;
 
                 }
+            }
+            
+            for(const auto directory : directories)
+            {
+                const auto fname( f_manager->get_inst_path().append_child(directory.second).os_filename().get_os_string() );
+                if(!std::filesystem::is_empty(fname))
+                {
+                    continue;
+                }
+                
+                // delete that directory
+                rmdir(fname.c_str());
+
+                wpkg_output::log("%1 %2 removed...")
+                        .quoted_arg(fname)
+                        .quoted_arg(directory.second)
+                    .level(wpkg_output::level_warning)
+                    .module(wpkg_output::module_remove_package)
+                    .package(package_name);
             }
         }
 
