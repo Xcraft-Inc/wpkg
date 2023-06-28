@@ -205,6 +205,10 @@ void wpkgar_backup::restore()
                     }
                     else
                     {
+                        // create intermediate directories
+                        wpkg_filename::uri_filename dirname = wpkg_filename::uri_filename(it->first).dirname();
+                        dirname.os_mkdir_p();
+
                         memfile::memory_file f;
                         f.read_file(it->second);
                         f.write_file(it->first);
