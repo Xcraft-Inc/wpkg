@@ -161,6 +161,7 @@ private:
 
     // unpack sub-functions
     bool prerm_scripts(package_item_t *item, const std::string& command);
+    bool remove_directory_if_empty(const std::string& package_name, const std::string& directory);
     bool do_remove(package_item_t *item);
 
     // deconfiguration sub-functions
