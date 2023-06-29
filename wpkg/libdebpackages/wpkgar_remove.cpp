@@ -1494,17 +1494,17 @@ bool wpkgar_remove::prerm_scripts(package_item_t *item, const std::string& comma
     return true;
 }
 
-bool wpkgar_remove::remove_directory_if_empty(const std::string& package_name, const std::string& directory)
+bool wpkgar_remove::remove_directory_if_empty(const std::string& package_name, const wpkg_filename::uri_filename& directory)
 {
     std::error_code ec;
-    const auto fname(f_manager->get_inst_path().append_child(directory).os_filename().get_os_string());
-    if(!std::filesystem::is_empty(fname, ec) || ec)
+    const auto fname(f_manager->get_inst_path().append_child(directory.path_only()));
+    if(!std::filesystem::is_empty(fname.os_filename().get_os_string(), ec) || ec)
     {
         return false;
     }
 
     // delete that directory
-    rmdir(fname.c_str());
+    rmdir(fname.os_filename().get_os_string().c_str());
 
     wpkg_output::log("%1 %2 removed...")
             .quoted_arg(fname)
@@ -1554,7 +1554,7 @@ bool wpkgar_remove::do_remove(package_item_t *item)
         f_manager->set_field(item->get_name(), "X-Remove-Date", wpkg_util::rfc2822_date(), true);
 
         {
-            std::set<std::string> directories;
+            std::set<wpkg_filename::uri_filename> directories;
             std::string package_name(item->get_filename());
             memfile::memory_file data;
             std::string data_filename("data.tar");
@@ -1632,7 +1632,7 @@ bool wpkgar_remove::do_remove(package_item_t *item)
                 wpkg_filename::uri_filename parent = wpkg_filename::uri_filename(directory).dirname();
                 for(; parent.is_valid();)
                 {
-                    is_removed = remove_directory_if_empty(package_name, parent.os_filename().get_os_string().c_str());
+                    is_removed = remove_directory_if_empty(package_name, parent);
                     if(!is_removed)
                     {
                         break;
