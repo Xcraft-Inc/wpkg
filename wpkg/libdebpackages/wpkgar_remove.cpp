@@ -43,6 +43,9 @@
 #   include    <sys/statvfs.h>
 #   include    <unistd.h>
 #endif
+#if defined(MO_DARWIN)
+#   include    <unistd.h>
+#endif
 
 extern bool g_accept_special_windows_filename;
 
