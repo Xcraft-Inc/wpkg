@@ -1632,7 +1632,7 @@ bool wpkgar_remove::do_remove(package_item_t *item)
                 wpkg_filename::uri_filename parent = wpkg_filename::uri_filename(directory).dirname();
                 for(; parent.is_valid();)
                 {
-                    is_removed = remove_directory_if_empty(package_name, parent.os_filename().get_os_string());
+                    is_removed = remove_directory_if_empty(package_name, parent.os_filename().get_os_string().c_str());
                     if(!is_removed)
                     {
                         break;
