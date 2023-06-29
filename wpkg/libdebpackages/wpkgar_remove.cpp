@@ -30,6 +30,7 @@
 #include    "libdebpackages/wpkg_backup.h"
 #include    "libdebpackages/wpkg_util.h"
 #include    "libdebpackages/debian_packages.h"
+#include    "libdebpackages/compatibility.h"
 #include    <sstream>
 #include    <fstream>
 #include    <algorithm>
