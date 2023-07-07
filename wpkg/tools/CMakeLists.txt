@@ -75,6 +75,7 @@ target_link_libraries( ${PROJECT_NAME}
     wpkg_z
     wpkg_bz2
     wpkg_zstd
+    ${LINK_EXTRA}
 )
 
 install(
@@ -108,6 +109,7 @@ endif()
 
 target_link_libraries( ${PROJECT_NAME}
     debpackages
+    ${LINK_EXTRA}
 )
 
 install(
@@ -141,6 +143,7 @@ endif()
 
 target_link_libraries( ${PROJECT_NAME}
     debpackages
+    ${LINK_EXTRA}
 )
 
 install(
@@ -179,6 +182,7 @@ target_link_libraries( ${PROJECT_NAME}
     wpkg_bz2
     wpkg_zstd
     wpkg_tld
+    ${LINK_EXTRA}
 )
 
 install(
@@ -217,6 +221,7 @@ target_link_libraries( ${PROJECT_NAME}
     wpkg_bz2
     wpkg_zstd
     wpkg_tld
+    ${LINK_EXTRA}
 )
 
 install(
@@ -255,6 +260,7 @@ target_link_libraries( ${PROJECT_NAME}
     wpkg_bz2
     wpkg_zstd
     wpkg_tld
+    ${LINK_EXTRA}
 )
 
 install(
@@ -292,6 +298,7 @@ target_link_libraries( ${PROJECT_NAME}
     wpkg_bz2
     wpkg_zstd
     wpkg_tld
+    ${LINK_EXTRA}
 )
 
 #if( MINGW32 OR MSYS )
@@ -322,6 +329,7 @@ target_link_libraries( ${PROJECT_NAME}
     wpkg_bz2_static
     wpkg_zstd_static
     wpkg_tld_static
+    ${LINK_EXTRA}
 )
 
 if( MO_MINGW32 OR MO_MINGW64 OR MSYS )
