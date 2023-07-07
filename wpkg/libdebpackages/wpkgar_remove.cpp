@@ -36,7 +36,22 @@
 #include    <algorithm>
 #include    <stdarg.h>
 #include    <errno.h>
-#include    <filesystem>
+
+#ifndef __has_include
+  static_assert(false, "__has_include not supported");
+#else
+#  if __cplusplus >= 201703L && __has_include(<filesystem>)
+#    include <filesystem>
+     namespace fs = std::filesystem;
+#  elif __has_include(<experimental/filesystem>)
+#    include <experimental/filesystem>
+     namespace fs = std::experimental::filesystem;
+#  elif __has_include(<boost/filesystem.hpp>)
+#    include <boost/filesystem.hpp>
+     namespace fs = boost::filesystem;
+#  endif
+#endif
+
 #include    <set>
 #if defined(MO_LINUX)
 #   include    <mntent.h>
@@ -1498,7 +1513,7 @@ bool wpkgar_remove::remove_directory_if_empty(const std::string& package_name, c
 {
     std::error_code ec;
     const auto fname(f_manager->get_inst_path().append_child(directory.path_only()));
-    if(!std::filesystem::is_empty(fname.os_filename().get_os_string(), ec) || ec)
+    if(!fs::is_empty(fname.os_filename().get_os_string(), ec) || ec)
     {
         return false;
     }
