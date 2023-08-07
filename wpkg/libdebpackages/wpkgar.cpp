@@ -1565,8 +1565,8 @@ void wpkgar_manager::load_temporary_package(const wpkg_filename::uri_filename& f
 
     // in this case filename is a direct reference to a package (the .deb file)
     memfile::memory_file p;
-    // load only the first 8 MB when we want to skip the data file
-    p.read_file(filename, NULL, skip_data ? 128 : -1);
+    // load only the first 16 MB when we want to skip the data file
+    p.read_file(filename, NULL, skip_data ? 256 : -1);
     if(p.is_compressed())
     {
         // the file should not be compressed though
