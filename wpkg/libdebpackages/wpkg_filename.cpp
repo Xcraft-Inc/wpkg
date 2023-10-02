@@ -997,12 +997,8 @@ void uri_filename::set_filename(std::string filename)
     bool invalid_windows_name(false);
     bool invalid_windows_character(false);
 
-    if(*s == '~')
+    if(*s == '~' && (s[1] == '/' || s[1] != '\\' || s[1] == '\0'))
     {
-        if(s[1] != '/' && s[1] != '\\' && s[1] != '\0')
-        {
-            throw wpkg_filename_exception_parameter("tilde + username is not supported; '~/' was expected at the start of your filename.");
-        }
         const char *home(getenv("HOME"));
         if(home != NULL)
         {
