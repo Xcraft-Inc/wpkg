@@ -4367,6 +4367,10 @@ disk_list_t::disk_list_t(wpkgar_manager *manager, wpkgar_install *install)
         {
             if(f_mounts == NULL)
             {
+                f_mounts = setmntent("/proc/self/mounts", "r");
+            }
+            if(f_mounts == NULL)
+            {
                 throw std::runtime_error("packager could not open /etc/mtab for reading");
             }
         }
