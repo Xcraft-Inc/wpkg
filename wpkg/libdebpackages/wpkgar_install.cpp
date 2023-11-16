@@ -3630,7 +3630,7 @@ bool wpkgar_install::trees_are_practically_identical(
     // Ideally this would be floating outside the function altogether,
     // but there's not much point while the types it references are only
     // defined inside wpkgar_install.
-    struct is_equivalent : std::unary_function<const package_item_t&, bool>
+    struct is_equivalent
     {
         is_equivalent(const package_item_t& pkg)
             : f_lhs(pkg)
