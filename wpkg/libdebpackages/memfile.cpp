@@ -300,13 +300,13 @@ int64_t memory_file::block_manager::write(const char *buffer, const int64_t offs
     // compute total size
     int64_t total(offset + bufsize);
 
-    // Increased the maximum size to 4Gb instead of 1Gb
+    // Increased the maximum size to 8Gb instead of 1Gb
     // I think we should have a command line flag so you can impose a limit
     // although there should be no reason other than package optimization
     // (i.e. make sure you don't include the "wrong" thing in your packages)
-    if(total > 4LL * 1024 * 1024 * 1024)
+    if(total > 8LL * 1024 * 1024 * 1024)
     {
-        throw memfile_exception_parameter("memory file size too large (over 4Gb?!)");
+        throw memfile_exception_parameter("memory file size too large (over 8Gb?!)");
     }
 
     // allocate blocks to satisfy the total size
