@@ -2115,6 +2115,8 @@ void wpkgar_build::build_source()
     append_file(data, info_dir, source_tar_gz);
     memfile::memory_file md5sums;
     md5sums.create(memfile::memory_file::file_format_other);
+    memfile::memory_file symlinks;
+    symlinks.create(memfile::memory_file::file_format_other);
     source_tar.dir_rewind();
     f_changelog_filename = wpkg_filename::uri_filename(source_dir).append_child(f_changelog_filename.full_path());
     f_copyright_filename = wpkg_filename::uri_filename(source_dir).append_child(f_copyright_filename.full_path());
@@ -2180,6 +2182,12 @@ void wpkgar_build::build_source()
                     file_data.is_text() ? ' ' : '*',
                     info.get_filename().c_str());
         }
+
+        // symlink files
+        if(info.get_file_type() == memfile::memory_file::file_info::symbolic_link)
+        {
+            symlinks.printf("%s -> %s\n", info.get_filename().c_str(), info.get_link().c_str());
+        }
     }
     data.end_archive();
     data.compress(source_tar_gz, f_compressor, f_zlevel);
@@ -2210,6 +2218,17 @@ void wpkgar_build::build_source()
         info.set_filename("md5sums");
         info.set_size(md5sums.size());
         append_file(control_tar, info, md5sums);
+    }
+
+    // add symlinks
+    {
+        memfile::memory_file::file_info info;
+        info.set_mode(0444);
+        info.set_user("Administrator");
+        info.set_group("Administrators");
+        info.set_filename("symlinks");
+        info.set_size(symlinks.size());
+        append_file(control_tar, info, symlinks);
     }
 
     control_tar.end_archive();
@@ -3522,6 +3541,8 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
     data_tar.create(memfile::memory_file::file_format_tar);
     memfile::memory_file md5sums;
     md5sums.create(memfile::memory_file::file_format_other);
+    memfile::memory_file symlinks;
+    symlinks.create(memfile::memory_file::file_format_other);
     memfile::memory_file in;
     size_t total_size(0);
 //::fprintf(stderr, "*** start dir_name = [%s]\n", dir_name.original_filename().c_str());
@@ -3850,6 +3871,12 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
                         input_data.is_text() ? ' ' : '*',
                         info.get_filename().c_str());
             }
+
+            // symlink files
+            if(info.get_file_type() == memfile::memory_file::file_info::symbolic_link)
+            {
+                symlinks.printf("%s -> %s\n", info.get_filename().c_str(), info.get_link().c_str());
+            }
         }
     }
     for(filesmetadata_vector_t::const_iterator it(filesmetadata.begin());
@@ -4067,6 +4094,17 @@ void wpkgar_build::build_deb(const wpkg_filename::uri_filename& dir_name)
         info.set_size(md5sums.size());
         append_file(control_tar, info, md5sums);
         found["md5sums"] = info;
+    }
+
+    // add symlinks
+    {
+        memfile::memory_file::file_info info;
+        info.set_mode(0444);
+        info.set_user("Administrator");
+        info.set_group("Administrators");
+        info.set_filename("symlinks");
+        info.set_size(symlinks.size());
+        append_file(control_tar, info, symlinks);
     }
 
     // if defined, add conffiles
