@@ -72,6 +72,7 @@
 #endif
 
 bool g_accept_special_windows_filename(false);
+bool g_keep_original_symlink_target(false);
 
 
 /** \brief Declarations and implementation of filename related functions.

@@ -62,6 +62,7 @@
 #endif
 
 extern bool g_accept_special_windows_filename;
+extern bool g_keep_original_symlink_target;
 
 
 namespace
@@ -1128,6 +1129,14 @@ const advgetopt::getopt::option wpkg_options[] =
         "accept-special-windows-filename",
         NULL,
         "while building a package, accept files reserved on windows like aux, prn, lpt0, etc, ...",
+        advgetopt::getopt::no_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "keep-original-symlink-target",
+        NULL,
+        "while installing a package, don't touch the target of symbolic links (keep original targets)",
         advgetopt::getopt::no_argument
     },
     {
@@ -3256,6 +3265,11 @@ void install(command_line& cl, const wpkg_filename::uri_filename package_name = 
         pkg_install.accept_special_windows_filename();
     }
 
+    if(cl.opt().is_defined("keep-original-symlink-target"))
+    {
+        pkg_install.keep_original_symlink_target();
+    }
+
     wpkgar::wpkgar_lock lock_wpkg(&manager, "Installing");
 
     if( pkg_install.validate() && !cl.dry_run())
@@ -4372,6 +4386,10 @@ void build(command_line& cl, wpkg_filename::uri_filename& package_name, const st
     if(cl.opt().is_defined("accept-special-windows-filename"))
     {
         pkg_build->accept_special_windows_filename();
+    }
+    if(cl.opt().is_defined("keep-original-symlink-target"))
+    {
+        pkg_build->keep_original_symlink_target();
     }
     else if(cl.opt().is_defined("enforce-path-length-limit"))
     {
@@ -6521,6 +6539,10 @@ void remove(command_line& cl)
     {
         pkg_remove.accept_special_windows_filename();
     }
+    if(cl.opt().is_defined("keep-original-symlink-target"))
+    {
+        pkg_remove.keep_original_symlink_target();
+    }
 
     wpkgar::wpkgar_lock lock_wpkg(&manager, "Removing");
     if(pkg_remove.validate() && !cl.dry_run())
@@ -6735,6 +6757,10 @@ void search(command_line& cl)
     if(cl.opt().is_defined("accept-special-windows-filename"))
     {
         g_accept_special_windows_filename = true;
+    }
+    if(cl.opt().is_defined("keep-original-symlink-target"))
+    {
+        g_keep_original_symlink_target = true;
     }
     wpkgar::wpkgar_manager manager;
     init_manager(cl, manager, "search");

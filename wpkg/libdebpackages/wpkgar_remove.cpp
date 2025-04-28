@@ -63,6 +63,7 @@
 #endif
 
 extern bool g_accept_special_windows_filename;
+extern bool g_keep_original_symlink_target;
 
 namespace wpkgar
 {
@@ -353,6 +354,11 @@ int wpkgar_remove::count() const
 void wpkgar_remove::accept_special_windows_filename()
 {
     g_accept_special_windows_filename = true;
+}
+
+void wpkgar_remove::keep_original_symlink_target()
+{
+    g_keep_original_symlink_target = true;
 }
 
 

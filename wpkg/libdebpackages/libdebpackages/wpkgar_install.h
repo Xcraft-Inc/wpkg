@@ -110,6 +110,7 @@ public:
     void set_parameter(parameter_t flag, int value);
     int get_parameter(parameter_t flag, int default_value) const;
     void accept_special_windows_filename();
+    void keep_original_symlink_target();
     void set_installing();
     void set_configuring();
     void set_reconfiguring();

@@ -55,6 +55,7 @@
 #endif
 
 extern bool g_accept_special_windows_filename;
+extern bool g_keep_original_symlink_target;
 
 namespace wpkgar
 {
@@ -690,6 +691,11 @@ int wpkgar_install::get_parameter(parameter_t flag, int default_value) const
 void wpkgar_install::accept_special_windows_filename()
 {
     g_accept_special_windows_filename = true;
+}
+
+void wpkgar_install::keep_original_symlink_target()
+{
+    g_keep_original_symlink_target = true;
 }
 
 
@@ -6341,7 +6347,15 @@ bool wpkgar_install::do_unpack(package_item_t *item, package_item_t *upgrade)
                         const wpkg_filename::uri_filename dest(f_manager->get_inst_path().append_child(info.get_filename()));
                         wpkg_filename::uri_filename path(dest.dirname());
 
-                        const wpkg_filename::uri_filename source( path.append_child( info.get_link() ) );
+                        wpkg_filename::uri_filename source;
+                        if(g_keep_original_symlink_target)
+                        {
+                            source = info.get_link();
+                        }
+                        else
+                        {
+                            source = path.append_child( info.get_link() );
+                        }
                         backup.backup(dest);
 
                         source.os_symlink(dest);

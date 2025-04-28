@@ -59,6 +59,7 @@ public:
     std::string get_package_name( const int i ) const;
     int count() const;
     void accept_special_windows_filename();
+    void keep_original_symlink_target();
 
     bool validate();
     int remove();

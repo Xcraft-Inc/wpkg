@@ -54,6 +54,7 @@
 #include    <time.h>
 
 extern bool g_accept_special_windows_filename;
+extern bool g_keep_original_symlink_target;
 
 namespace wpkgar
 {
@@ -337,6 +338,11 @@ void wpkgar_build::set_compressor(memfile::memory_file::file_format_t compressor
 void wpkgar_build::accept_special_windows_filename()
 {
     g_accept_special_windows_filename = true;
+}
+
+void wpkgar_build::keep_original_symlink_target()
+{
+    g_keep_original_symlink_target = true;
 }
 
 /** \brief Set the maximum length of a path.
@@ -2721,6 +2727,10 @@ int wpkgar_build::update_and_upgrade()
             {
                 cmd += " --accept-special-windows-filename";
             }
+            if(g_keep_original_symlink_target)
+            {
+                cmd += " --keep-original-symlink-target";
+            }
             cmd += " --force-file-info";
         }
 
@@ -3039,6 +3049,10 @@ void wpkgar_build::build_repository()
                     if(g_accept_special_windows_filename)
                     {
                         cmd += " --accept-special-windows-filename";
+                    }
+                    if(g_keep_original_symlink_target)
+                    {
+                        cmd += " --keep-original-symlink-target";
                     }
                     cmd += " --create-index index.tar.gz";
                     cmd += " --force-file-info";
