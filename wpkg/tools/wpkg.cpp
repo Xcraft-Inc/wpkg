@@ -1134,14 +1134,6 @@ const advgetopt::getopt::option wpkg_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-        "keep-original-symlink-target",
-        NULL,
-        "while installing a package, don't touch the target of symbolic links (keep original targets)",
-        advgetopt::getopt::no_argument
-    },
-    {
-        '\0',
-        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
         "admindir",
         "var/lib/wpkg",
         "define the administration directory (i.e. wpkg database folder), default is /var/lib/wpkg",
@@ -1402,6 +1394,14 @@ const advgetopt::getopt::option wpkg_options[] =
         "no-interactions",
         "let wpkg know that it is interactive",
         advgetopt::getopt::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "keep-original-symlink-target",
+        NULL,
+        "while installing a package, don't touch the target of symbolic links (keep original targets)",
+        advgetopt::getopt::no_argument
     },
     {
         '\0',
