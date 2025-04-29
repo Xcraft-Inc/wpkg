@@ -211,6 +211,8 @@ wpkgar_build::wpkgar_build(wpkgar_manager *manager, const std::string& build_dir
     // The following causes a problem with boost which has a sub-directory
     // named "core"; many other systems have such too...
     //f_exceptions.push_back("core");
+
+    f_exceptions_deflength = f_exceptions.size();
 }
 
 
@@ -693,6 +695,7 @@ void wpkgar_build::add_exception(const wpkg_filename::uri_filename& pattern)
     if(pattern.empty())
     {
         f_exceptions.clear();
+        f_exceptions_deflength = 0;
     }
     else
     {
@@ -2616,6 +2619,8 @@ void wpkgar_build::build_project_packages()
     info.set_output_dir(f_output_dir);
     info.set_compressor(f_compressor);
     info.set_zlevel(f_zlevel);
+    info.f_exceptions = f_exceptions;
+    info.f_exceptions_deflength = f_exceptions_deflength;
     info.build_info();
 }
 
@@ -3053,6 +3058,15 @@ void wpkgar_build::build_repository()
                     if(g_keep_original_symlink_target)
                     {
                         cmd += " --keep-original-symlink-target";
+                    }
+                    if(f_exceptions.size() > f_exceptions_deflength)
+                    {
+                        cmd += " --exception";
+                        for(exception_vector_t::const_iterator it(f_exceptions.begin() + f_exceptions_deflength);
+                            it != f_exceptions.end(); ++it)
+                        {
+                            cmd += " " + it->path_only();
+                        }
                     }
                     cmd += " --create-index index.tar.gz";
                     cmd += " --force-file-info";

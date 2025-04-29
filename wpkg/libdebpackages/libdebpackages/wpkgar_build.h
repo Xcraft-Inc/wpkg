@@ -177,6 +177,7 @@ private:
     wpkg_filename::uri_filename         f_extra_path;           // input directory (info) or output directory (directory)
     wpkg_filename::uri_filename         f_build_number_filename;// file with a number used as the build number
     exception_vector_t                  f_exceptions;           // files to never include in tarballs
+    size_t                              f_exceptions_deflength;
     wpkgar_flags_t                      f_flags;
     std::string                         f_cmake_generator;
     std::string                         f_make_tool;
