@@ -35,3 +35,5 @@ This fork of WPKG adds features needed by the Xcraft toolchain.
 - Accept filenames with tilde at the beginning
 - Add support for WSL2
 - Add a file that list all symlinks in control.tar
+- Support --exception option with sub-packages (control.info)
+- Add new option --keep-original-symlink-target
