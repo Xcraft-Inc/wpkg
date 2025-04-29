@@ -18,9 +18,12 @@
 #include "zstd.h"
 #include "zdict.h"
 #include "sequence_producer.h"
+#include "fuzz_third_party_seq_prod.h"
 
 const int kMinClevel = -3;
 const int kMaxClevel = 19;
+
+void* FUZZ_seqProdState = NULL;
 
 static void set(ZSTD_CCtx *cctx, ZSTD_cParameter param, int value)
 {
@@ -72,12 +75,25 @@ ZSTD_parameters FUZZ_randomParams(size_t srcSize, FUZZ_dataProducer_t *producer)
 }
 
 static void setSequenceProducerParams(ZSTD_CCtx *cctx, FUZZ_dataProducer_t *producer) {
+#ifdef FUZZ_THIRD_PARTY_SEQ_PROD
+    ZSTD_registerSequenceProducer(
+        cctx,
+        FUZZ_seqProdState,
+        FUZZ_thirdPartySeqProd
+    );
+#else
     ZSTD_registerSequenceProducer(
         cctx,
         NULL,
         simpleSequenceProducer
     );
+#endif
+
+#ifdef FUZZ_THIRD_PARTY_SEQ_PROD
+    FUZZ_ZASSERT(ZSTD_CCtx_setParameter(cctx, ZSTD_c_enableSeqProducerFallback, 1));
+#else
     setRand(cctx, ZSTD_c_enableSeqProducerFallback, 0, 1, producer);
+#endif
     FUZZ_ZASSERT(ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, 0));
     FUZZ_ZASSERT(ZSTD_CCtx_setParameter(cctx, ZSTD_c_enableLongDistanceMatching, ZSTD_ps_disable));
 }
@@ -124,12 +140,13 @@ void FUZZ_setRandomParameters(ZSTD_CCtx *cctx, size_t srcSize, FUZZ_dataProducer
     setRand(cctx, ZSTD_c_forceMaxWindow, 0, 1, producer);
     setRand(cctx, ZSTD_c_literalCompressionMode, 0, 2, producer);
     setRand(cctx, ZSTD_c_forceAttachDict, 0, 2, producer);
-    setRand(cctx, ZSTD_c_useBlockSplitter, 0, 2, producer);
+    setRand(cctx, ZSTD_c_blockSplitterLevel, 0, ZSTD_BLOCKSPLITTER_LEVEL_MAX, producer);
+    setRand(cctx, ZSTD_c_splitAfterSequences, 0, 2, producer);
     setRand(cctx, ZSTD_c_deterministicRefPrefix, 0, 1, producer);
     setRand(cctx, ZSTD_c_prefetchCDictTables, 0, 2, producer);
     setRand(cctx, ZSTD_c_maxBlockSize, ZSTD_BLOCKSIZE_MAX_MIN, ZSTD_BLOCKSIZE_MAX, producer);
     setRand(cctx, ZSTD_c_validateSequences, 0, 1, producer);
-    setRand(cctx, ZSTD_c_searchForExternalRepcodes, 0, 2, producer);
+    setRand(cctx, ZSTD_c_repcodeResolution, 0, 2, producer);
     if (FUZZ_dataProducer_uint32Range(producer, 0, 1) == 0) {
       setRand(cctx, ZSTD_c_srcSizeHint, ZSTD_SRCSIZEHINT_MIN, 2 * srcSize, producer);
     }
@@ -137,11 +154,15 @@ void FUZZ_setRandomParameters(ZSTD_CCtx *cctx, size_t srcSize, FUZZ_dataProducer
       setRand(cctx, ZSTD_c_targetCBlockSize, ZSTD_TARGETCBLOCKSIZE_MIN, ZSTD_TARGETCBLOCKSIZE_MAX, producer);
     }
 
+#ifdef FUZZ_THIRD_PARTY_SEQ_PROD
+    setSequenceProducerParams(cctx, producer);
+#else
     if (FUZZ_dataProducer_uint32Range(producer, 0, 10) == 1) {
         setSequenceProducerParams(cctx, producer);
     } else {
         ZSTD_registerSequenceProducer(cctx, NULL, NULL);
     }
+#endif
 }
 
 FUZZ_dict_t FUZZ_train(void const* src, size_t srcSize, FUZZ_dataProducer_t *producer)

@@ -8,11 +8,6 @@
  * You may select, at your option, one of the above-listed licenses.
  */
 
-#if defined (__cplusplus)
-extern "C" {
-#endif
-
-
 /*-****************************************
 *  Dependencies
 ******************************************/
@@ -23,16 +18,27 @@ extern "C" {
 #include <errno.h>
 #include <assert.h>
 
+#if defined(__FreeBSD__)
+#include <sys/param.h> /* __FreeBSD_version */
+#endif /* #ifdef __FreeBSD__ */
+
 #if defined(_WIN32)
 #  include <sys/utime.h>  /* utime */
 #  include <io.h>         /* _chmod */
+#  define ZSTD_USE_UTIMENSAT 0
 #else
 #  include <unistd.h>     /* chown, stat */
-#  if PLATFORM_POSIX_VERSION < 200809L || !defined(st_mtime)
-#    include <utime.h>    /* utime */
+#  include <sys/stat.h>   /* utimensat, st_mtime */
+#  if (PLATFORM_POSIX_VERSION >= 200809L && defined(st_mtime)) \
+      || (defined(__FreeBSD__) && __FreeBSD_version >= 1100056)
+#    define ZSTD_USE_UTIMENSAT 1
 #  else
+#    define ZSTD_USE_UTIMENSAT 0
+#  endif
+#  if ZSTD_USE_UTIMENSAT
 #    include <fcntl.h>    /* AT_FDCWD */
-#    include <sys/stat.h> /* utimensat */
+#  else
+#    include <utime.h>    /* utime */
 #  endif
 #endif
 
@@ -102,6 +108,17 @@ UTIL_STATIC void* UTIL_realloc(void *ptr, size_t size)
     #define chmod _chmod
 #endif
 
+#ifndef ZSTD_HAVE_FCHMOD
+#if PLATFORM_POSIX_VERSION >= 199309L
+#define ZSTD_HAVE_FCHMOD
+#endif
+#endif
+
+#ifndef ZSTD_HAVE_FCHOWN
+#if PLATFORM_POSIX_VERSION >= 200809L
+#define ZSTD_HAVE_FCHOWN
+#endif
+#endif
 
 /*-****************************************
 *  Console log
@@ -147,19 +164,36 @@ void UTIL_traceFileStat(void)
     g_traceFileStat = 1;
 }
 
-int UTIL_stat(const char* filename, stat_t* statbuf)
+int UTIL_fstat(const int fd, const char* filename, stat_t* statbuf)
 {
     int ret;
-    UTIL_TRACE_CALL("UTIL_stat(%s)", filename);
+    UTIL_TRACE_CALL("UTIL_stat(%d, %s)", fd, filename);
 #if defined(_MSC_VER)
-    ret = !_stat64(filename, statbuf);
+    if (fd >= 0) {
+        ret = !_fstat64(fd, statbuf);
+    } else {
+        ret = !_stat64(filename, statbuf);
+    }
 #elif defined(__MINGW32__) && defined (__MSVCRT__)
-    ret = !_stati64(filename, statbuf);
+    if (fd >= 0) {
+        ret = !_fstati64(fd, statbuf);
+    } else {
+        ret = !_stati64(filename, statbuf);
+    }
 #else
-    ret = !stat(filename, statbuf);
+    if (fd >= 0) {
+        ret = !fstat(fd, statbuf);
+    } else {
+        ret = !stat(filename, statbuf);
+    }
 #endif
     UTIL_TRACE_RET(ret);
     return ret;
+}
+
+int UTIL_stat(const char* filename, stat_t* statbuf)
+{
+    return UTIL_fstat(-1, filename, statbuf);
 }
 
 int UTIL_isRegularFile(const char* infilename)
@@ -184,10 +218,15 @@ int UTIL_isRegularFileStat(const stat_t* statbuf)
 /* like chmod, but avoid changing permission of /dev/null */
 int UTIL_chmod(char const* filename, const stat_t* statbuf, mode_t permissions)
 {
+    return UTIL_fchmod(-1, filename, statbuf, permissions);
+}
+
+int UTIL_fchmod(const int fd, char const* filename, const stat_t* statbuf, mode_t permissions)
+{
     stat_t localStatBuf;
     UTIL_TRACE_CALL("UTIL_chmod(%s, %#4o)", filename, (unsigned)permissions);
     if (statbuf == NULL) {
-        if (!UTIL_stat(filename, &localStatBuf)) {
+        if (!UTIL_fstat(fd, filename, &localStatBuf)) {
             UTIL_TRACE_RET(0);
             return 0;
         }
@@ -197,9 +236,20 @@ int UTIL_chmod(char const* filename, const stat_t* statbuf, mode_t permissions)
         UTIL_TRACE_RET(0);
         return 0; /* pretend success, but don't change anything */
     }
-    UTIL_TRACE_CALL("chmod");
+#ifdef ZSTD_HAVE_FCHMOD
+    if (fd >= 0) {
+        int ret;
+        UTIL_TRACE_CALL("fchmod");
+        ret = fchmod(fd, permissions);
+        UTIL_TRACE_RET(ret);
+        UTIL_TRACE_RET(ret);
+        return ret;
+    } else
+#endif
     {
-        int const ret = chmod(filename, permissions);
+        int ret;
+        UTIL_TRACE_CALL("chmod");
+        ret = chmod(filename, permissions);
         UTIL_TRACE_RET(ret);
         UTIL_TRACE_RET(ret);
         return ret;
@@ -215,7 +265,12 @@ int UTIL_utime(const char* filename, const stat_t *statbuf)
      * that struct stat has a struct timespec st_mtim member. We need this
      * check because there are some platforms that claim to be POSIX 2008
      * compliant but which do not have st_mtim... */
-#if (PLATFORM_POSIX_VERSION >= 200809L) && defined(st_mtime)
+    /* FreeBSD has implemented POSIX 2008 for a long time but still only
+     * advertises support for POSIX 2001. They have a version macro that
+     * lets us safely gate them in.
+     * See https://docs.freebsd.org/en/books/porters-handbook/versions/.
+     */
+#if ZSTD_USE_UTIMENSAT
     {
         /* (atime, mtime) */
         struct timespec timebuf[2] = { {0, UTIME_NOW} };
@@ -237,17 +292,19 @@ int UTIL_utime(const char* filename, const stat_t *statbuf)
 
 int UTIL_setFileStat(const char *filename, const stat_t *statbuf)
 {
+    return UTIL_setFDStat(-1, filename, statbuf);
+}
+
+int UTIL_setFDStat(const int fd, const char *filename, const stat_t *statbuf)
+{
     int res = 0;
     stat_t curStatBuf;
-    UTIL_TRACE_CALL("UTIL_setFileStat(%s)", filename);
+    UTIL_TRACE_CALL("UTIL_setFileStat(%d, %s)", fd, filename);
 
-    if (!UTIL_stat(filename, &curStatBuf) || !UTIL_isRegularFileStat(&curStatBuf)) {
+    if (!UTIL_fstat(fd, filename, &curStatBuf) || !UTIL_isRegularFileStat(&curStatBuf)) {
         UTIL_TRACE_RET(-1);
         return -1;
     }
-
-    /* set access and modification times */
-    res += UTIL_utime(filename, statbuf);
 
     /* Mimic gzip's behavior:
      *
@@ -258,13 +315,27 @@ int UTIL_setFileStat(const char *filename, const stat_t *statbuf)
      * setgid bits." */
 
 #if !defined(_WIN32)
-    res += chown(filename, -1, statbuf->st_gid);  /* Apply group ownership */
+#ifdef ZSTD_HAVE_FCHOWN
+    if (fd >= 0) {
+        res += fchown(fd, -1, statbuf->st_gid);  /* Apply group ownership */
+    } else
+#endif
+    {
+        res += chown(filename, -1, statbuf->st_gid);  /* Apply group ownership */
+    }
 #endif
 
-    res += UTIL_chmod(filename, &curStatBuf, statbuf->st_mode & 0777);  /* Copy file permissions */
+    res += UTIL_fchmod(fd, filename, &curStatBuf, statbuf->st_mode & 0777);  /* Copy file permissions */
 
 #if !defined(_WIN32)
-    res += chown(filename, statbuf->st_uid, -1);  /* Apply user ownership */
+#ifdef ZSTD_HAVE_FCHOWN
+    if (fd >= 0) {
+        res += fchown(fd, statbuf->st_uid, -1);  /* Apply user ownership */
+    } else
+#endif
+    {
+        res += chown(filename, statbuf->st_uid, -1);  /* Apply user ownership */
+    }
 #endif
 
     errno = 0;
@@ -600,7 +671,6 @@ UTIL_createFileNamesTable_fromFileName(const char* inputFileName)
     size_t nbFiles = 0;
     char* buf;
     size_t bufSize;
-    size_t pos = 0;
     stat_t statbuf;
 
     if (!UTIL_stat(inputFileName, &statbuf) || !UTIL_isRegularFileStat(&statbuf))
@@ -627,12 +697,13 @@ UTIL_createFileNamesTable_fromFileName(const char* inputFileName)
     {   const char** filenamesTable = (const char**) malloc(nbFiles * sizeof(*filenamesTable));
         CONTROL(filenamesTable != NULL);
 
-        {   size_t fnb;
-            for (fnb = 0, pos = 0; fnb < nbFiles; fnb++) {
+        {   size_t fnb, pos = 0;
+            for (fnb = 0; fnb < nbFiles; fnb++) {
                 filenamesTable[fnb] = buf+pos;
                 pos += strlen(buf+pos)+1;  /* +1 for the finishing `\0` */
-        }   }
+            }
         assert(pos <= bufSize);
+        }
 
         return UTIL_assembleFileNamesTable(filenamesTable, nbFiles, buf);
     }
@@ -693,7 +764,7 @@ void UTIL_refFilename(FileNamesTable* fnt, const char* filename)
 
 static size_t getTotalTableSize(FileNamesTable* table)
 {
-    size_t fnb = 0, totalSize = 0;
+    size_t fnb, totalSize = 0;
     for(fnb = 0 ; fnb < table->tableSize && table->fileNames[fnb] ; ++fnb) {
         totalSize += strlen(table->fileNames[fnb]) + 1; /* +1 to add '\0' at the end of each fileName */
     }
@@ -1058,9 +1129,6 @@ static char* mallocAndJoin2Dir(const char *dir1, const char *dir2)
 
         memcpy(outDirBuffer, dir1, dir1Size);
         outDirBuffer[dir1Size] = '\0';
-
-        if (dir2[0] == '.')
-            return outDirBuffer;
 
         buffer = outDirBuffer + dir1Size;
         if (dir1Size > 0 && *(buffer - 1) != PATH_SEP) {
@@ -1486,7 +1554,6 @@ failed:
 
 #elif defined(__FreeBSD__)
 
-#include <sys/param.h>
 #include <sys/sysctl.h>
 
 /* Use physical core sysctl when available
@@ -1574,7 +1641,3 @@ int UTIL_countLogicalCores(void)
 {
     return UTIL_countCores(1);
 }
-
-#if defined (__cplusplus)
-}
-#endif

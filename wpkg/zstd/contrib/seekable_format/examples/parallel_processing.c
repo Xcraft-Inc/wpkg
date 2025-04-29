@@ -19,7 +19,7 @@
 #define ZSTD_STATIC_LINKING_ONLY
 #include <zstd.h>      // presumes zstd library is installed
 #include <zstd_errors.h>
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_WIN32)
 #  include <windows.h>
 #  define SLEEP(x) Sleep(x)
 #else
@@ -29,7 +29,7 @@
 
 #include "pool.h"      // use zstd thread pool for demo
 
-#include "zstd_seekable.h"
+#include "../zstd_seekable.h"
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
