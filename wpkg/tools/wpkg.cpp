@@ -6666,6 +6666,15 @@ void autoremove(command_line& cl)
     }
     init_remover(cl, manager, pkg_remove, "autoremove");
 
+    if(cl.opt().is_defined("accept-special-windows-filename"))
+    {
+        pkg_remove.accept_special_windows_filename();
+    }
+    if(cl.opt().is_defined("keep-original-symlink-target"))
+    {
+        pkg_remove.keep_original_symlink_target();
+    }
+
     wpkgar::wpkgar_lock lock_wpkg(&manager, "Removing");
     pkg_remove.autoremove(cl.dry_run());
 }
