@@ -132,8 +132,17 @@ bool wpkgar_backup::backup(const wpkg_filename::uri_filename& filename)
         }
         return false;
     }
-    if(filename.is_dir() && !filename.is_symlink())
+    if(filename.is_dir())
     {
+        if(filename.is_symlink())
+        {
+            wpkg_output::log("directory %1 could not be backed up because it's a symbolic link, but continue anyway.")
+                    .quoted_arg(filename)
+                .level(wpkg_output::level_warning)
+                .module(wpkg_output::module_unpack_package)
+                .action(f_log_action);
+            return true;
+        }
         // TODO:
         // recursively backup the directory!!!
         wpkg_output::log("directory %1 could not be backed up.")
