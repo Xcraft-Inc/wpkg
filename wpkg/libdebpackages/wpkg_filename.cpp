@@ -2230,6 +2230,30 @@ bool uri_filename::is_reg() const
     return s.is_reg();
 }
 
+/** \brief Check whether the file exists and is a symbolic link.
+ *
+ * This function returns true if the filename exists and is a symbolic link.
+ *
+ * \warning
+ * If the file does not exists, this function returns false. To check
+ * whether the file exists, make sure to call exists() first.
+ *
+ * \warning
+ * If this function succeeds once (returns true) then it will always
+ * return true because the result of the stat() function is cached.
+ *
+ * \return true if the file exists and is a symbolic link, false otherwise.
+ */
+bool uri_filename::is_symlink() const
+{
+    file_stat s;
+    if(os_stat(s) != 0)
+    {
+        return false;
+    }
+    return s.is_symlink();
+}
+
 /** \brief Check whether the file exists and is a directory.
  *
  * This function returns true if the filename exists and is a directory.
@@ -4363,6 +4387,11 @@ bool uri_filename::file_stat::is_dir() const
 bool uri_filename::file_stat::is_reg() const
 {
     return (f_mode & S_IFMT) == S_IFREG;
+}
+
+bool uri_filename::file_stat::is_symlink() const
+{
+    return (f_mode & S_IFMT) == S_IFLNK;
 }
 
 uint64_t uri_filename::file_stat::get_nlink() const

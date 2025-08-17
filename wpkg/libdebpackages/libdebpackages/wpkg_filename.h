@@ -93,6 +93,7 @@ public:
         uint32_t    get_mode() const;
         bool        is_dir() const;
         bool        is_reg() const;
+        bool        is_symlink() const;
         uint64_t    get_nlink() const;
         uint32_t    get_uid() const;
         uint32_t    get_gid() const;
@@ -229,6 +230,7 @@ public:
     bool                        empty() const;
     bool                        exists() const;
     bool                        is_reg() const;
+    bool                        is_symlink() const;
     bool                        is_dir() const;
     bool                        is_deb() const;
     bool                        is_valid() const;
