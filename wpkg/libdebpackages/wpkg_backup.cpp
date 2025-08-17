@@ -132,7 +132,7 @@ bool wpkgar_backup::backup(const wpkg_filename::uri_filename& filename)
         }
         return false;
     }
-    if(filename.is_dir())
+    if(filename.is_dir() && !filename.is_symlink())
     {
         // TODO:
         // recursively backup the directory!!!
