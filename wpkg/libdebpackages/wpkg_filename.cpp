@@ -2247,7 +2247,7 @@ bool uri_filename::is_reg() const
 bool uri_filename::is_symlink() const
 {
     file_stat s;
-    if(os_stat(s) != 0)
+    if(os_lstat(s) != 0)
     {
         return false;
     }
