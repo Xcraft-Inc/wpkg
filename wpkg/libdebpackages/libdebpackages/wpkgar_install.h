@@ -111,6 +111,7 @@ public:
     int get_parameter(parameter_t flag, int default_value) const;
     void accept_special_windows_filename();
     void keep_original_symlink_target();
+    void set_skip_hooks();
     void set_installing();
     void set_configuring();
     void set_reconfiguring();
@@ -325,6 +326,7 @@ private:
     wpkgar_list_of_strings_t            f_field_names;
     controlled_vars::fbool_t            f_read_essentials;
     controlled_vars::fbool_t            f_install_source;
+    controlled_vars::fbool_t            f_skip_hooks;
 };
 
 }   // namespace wpkgar

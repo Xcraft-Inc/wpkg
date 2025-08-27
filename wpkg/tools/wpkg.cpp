@@ -1812,6 +1812,14 @@ const advgetopt::getopt::option wpkg_options[] =
         advgetopt::getopt::no_argument
     },
     {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "skip-hooks",
+        NULL,
+        "skip postinst hooks when installing or configuring a package",
+        advgetopt::getopt::no_argument
+    },
+    {
         'E',
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
         "skip-same-version",
@@ -3270,6 +3278,11 @@ void install(command_line& cl, const wpkg_filename::uri_filename package_name = 
         pkg_install.keep_original_symlink_target();
     }
 
+    if(cl.opt().is_defined("skip-hooks"))
+    {
+        pkg_install.set_skip_hooks();
+    }
+
     wpkgar::wpkgar_lock lock_wpkg(&manager, "Installing");
 
     if( pkg_install.validate() && !cl.dry_run())
@@ -3757,6 +3770,11 @@ void configure(command_line& cl)
     wpkgar::wpkgar_install pkg_install(&manager);
     init_installer(cl, manager, pkg_install, "configure");
     pkg_install.set_configuring();
+
+    if(cl.opt().is_defined("skip-hooks"))
+    {
+        pkg_install.set_skip_hooks();
+    }
 
     // if pending is set then we want to read the database and configure any
     // half-installed packages

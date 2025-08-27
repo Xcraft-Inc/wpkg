@@ -665,6 +665,7 @@ wpkgar_install::wpkgar_install(wpkgar_manager *manager)
     //, f_field_names() -- auto-init
     //, f_read_essentials(false) -- auto-init
     //, f_install_source(false) -- auto-init
+    //, f_skip_hooks(false) -- auto-init
 {
 }
 
@@ -698,6 +699,10 @@ void wpkgar_install::keep_original_symlink_target()
     g_keep_original_symlink_target = true;
 }
 
+void wpkgar_install::set_skip_hooks()
+{
+    f_skip_hooks = true;
+}
 
 void wpkgar_install::set_installing()
 {
@@ -6884,35 +6889,38 @@ bool wpkgar_install::configure_package(package_item_t *item)
         }
     }
 
-    // new-postinst configure <new-version>
-    wpkgar_manager::script_parameters_t params;
-    params.push_back("configure");
-    params.push_back(item->get_version());
-    if(!f_manager->run_script(item->get_name(), wpkgar_manager::wpkgar_script_postinst, params))
+    if(!f_skip_hooks)
     {
-        // errors are reported but there is no unwind for configuration failures
-        ++err;
-        wpkg_output::log("postinst script failed configuring the package.")
-            .level(wpkg_output::level_error)
-            .module(wpkg_output::module_configure_package)
-            .package(item->get_name())
-            .action("install-configure");
-    }
-    else
-    {
-        // hooks-postinst configure <package-name> <new-version>
-        wpkgar_manager::script_parameters_t hooks_params;
-        hooks_params.push_back("configure");
-        hooks_params.push_back(item->get_name());
-        hooks_params.push_back(item->get_version());
-        if(!f_manager->run_script("core", wpkgar_manager::wpkgar_script_postinst, hooks_params))
+        // new-postinst configure <new-version>
+        wpkgar_manager::script_parameters_t params;
+        params.push_back("configure");
+        params.push_back(item->get_version());
+        if(!f_manager->run_script(item->get_name(), wpkgar_manager::wpkgar_script_postinst, params))
         {
+            // errors are reported but there is no unwind for configuration failures
             ++err;
-            wpkg_output::log("a postinst global hook failed for package %1, the installation is canceled.")
-                    .quoted_arg(item->get_name())
+            wpkg_output::log("postinst script failed configuring the package.")
                 .level(wpkg_output::level_error)
-                .module(wpkg_output::module_unpack_package)
+                .module(wpkg_output::module_configure_package)
+                .package(item->get_name())
                 .action("install-configure");
+        }
+        else
+        {
+            // hooks-postinst configure <package-name> <new-version>
+            wpkgar_manager::script_parameters_t hooks_params;
+            hooks_params.push_back("configure");
+            hooks_params.push_back(item->get_name());
+            hooks_params.push_back(item->get_version());
+            if(!f_manager->run_script("core", wpkgar_manager::wpkgar_script_postinst, hooks_params))
+            {
+                ++err;
+                wpkg_output::log("a postinst global hook failed for package %1, the installation is canceled.")
+                        .quoted_arg(item->get_name())
+                    .level(wpkg_output::level_error)
+                    .module(wpkg_output::module_unpack_package)
+                    .action("install-configure");
+            }
         }
     }
 
