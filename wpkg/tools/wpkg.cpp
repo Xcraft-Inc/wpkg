@@ -3488,6 +3488,16 @@ void unpack(command_line& cl)
     init_installer(cl, manager, pkg_install, "unpack");
     pkg_install.set_unpacking();
 
+    if(cl.opt().is_defined("accept-special-windows-filename"))
+    {
+        pkg_install.accept_special_windows_filename();
+    }
+
+    if(cl.opt().is_defined("keep-original-symlink-target"))
+    {
+        pkg_install.keep_original_symlink_target();
+    }
+
     wpkgar::wpkgar_lock lock_wpkg(&manager, "Installing");
     if(pkg_install.validate() && !cl.dry_run())
     {
