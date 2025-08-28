@@ -4391,7 +4391,11 @@ bool uri_filename::file_stat::is_reg() const
 
 bool uri_filename::file_stat::is_symlink() const
 {
+#ifndef MO_WINDOWS
     return (f_mode & S_IFMT) == S_IFLNK;
+#else
+    return false;
+#endif
 }
 
 uint64_t uri_filename::file_stat::get_nlink() const
