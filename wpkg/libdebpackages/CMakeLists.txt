@@ -40,6 +40,8 @@
 ## libdebpackages
 ##
 
+find_package(OpenSSL REQUIRED)
+
 # WARNING: C/CXX flags are defined once for all the CMakeLists.txt projects
 if( MSVC )
     set( DEBPACKAGES_FOLDER libs/debpackages )
@@ -74,6 +76,7 @@ include_directories(
     "${expr_static_SOURCE_DIR}"
     "${expr_static_BINARY_DIR}"
     "${utf8_static_SOURCE_DIR}"
+    ${OPENSSL_INCLUDE_DIR}
 )
 
 set(LIBDEBPACKAGES_SOURCE_FILES
@@ -138,6 +141,7 @@ target_link_libraries( ${PROJECT_NAME}
     wpkg_bz2_static
     wpkg_zstd_static
     wpkg_tld_static
+    ${OPENSSL_LIBRARIES}
     ${EXTRA_LIBRARIES}
 )
 
@@ -176,6 +180,7 @@ include_directories(
     "${wpkg_zstd_SOURCE_DIR}/lib"
     "${expr_SOURCE_DIR}"
     "${utf8_SOURCE_DIR}"
+    ${OPENSSL_INCLUDE_DIR}
 )
 
 add_library( ${PROJECT_NAME} SHARED
@@ -199,6 +204,7 @@ target_link_libraries( ${PROJECT_NAME}
     wpkg_bz2
     wpkg_zstd
     wpkg_tld
+    ${OPENSSL_LIBRARIES}
     ${EXTRA_LIBRARIES}
 )
 
