@@ -48,7 +48,9 @@
 #include    "libdebpackages/case_insensitive_string.h"
 #include    "libdebpackages/wpkg_output.h"
 
+#ifdef USE_OPENSSL
 #define CPPHTTPLIB_OPENSSL_SUPPORT
+#endif /* USE_OPENSSL */
 #include    "libdebpackages/httplib.h"
 
 #ifdef debpackages_EXPORTS
@@ -1670,7 +1672,11 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
             }
         }
     }
+#ifdef USE_OPENSSL
     else if(scheme == "http" || scheme == "https")
+#else /* USE_OPENSSL */
+    else if(scheme == "http")
+#endif /* !USE_OPENSSL */
     {
         // make a copy of filename so we can handle redirects and not
         // lose the original filename

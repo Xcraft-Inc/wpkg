@@ -200,6 +200,9 @@ if( ADVGETOPT_THROW_FOR_EXIT )
 	add_definitions( -DADVGETOPT_THROW_FOR_EXIT )
 endif()
 
+if( ENABLE_OPENSSL )
+    add_definitions( -DUSE_OPENSSL )
+endif()
 
 configure_file(
     ${PROJECT_SOURCE_DIR}/dev/control-bin.in
