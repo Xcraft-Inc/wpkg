@@ -1689,7 +1689,7 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
             info->set_mode(0644);
         }
 
-        std::string host(uri.path_scheme() + "://" + uri.get_domain() + ":" + uri.get_port());
+        std::string host(uri.path_scheme() + "://" + uri.get_domain() /*+ ":" + uri.get_port()*/);
         httplib::Client cli(host);
 
         if(!filename.get_username().empty() && !filename.get_password().empty())
