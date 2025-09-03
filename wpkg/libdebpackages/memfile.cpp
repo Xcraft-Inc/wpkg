@@ -1708,6 +1708,28 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
             return true;
         });
 
+        if (!res)
+        {
+            const auto err = res.error();
+
+            switch (err) {
+            case httplib::Error::SSLConnection:
+                throw memfile_exception_io("SSL connection failed, SSL error: " + res.ssl_error());
+
+            case httplib::Error::SSLLoadingCerts:
+                throw memfile_exception_io("SSL cert loading failed, OpenSSL error: " + res.ssl_openssl_error());
+
+            case httplib::Error::SSLServerVerification:
+                throw memfile_exception_io("SSL verification failed, X509 error: " + res.ssl_openssl_error());
+
+            case httplib::Error::SSLServerHostnameVerification:
+                throw memfile_exception_io("SSL hostname verification failed, X509 error: " + res.ssl_openssl_error());
+
+            default:
+                throw memfile_exception_io("HTTP error: " + httplib::to_string(err));
+            }
+        }
+
         if(info != NULL)
         {
             info->set_size(pos);
