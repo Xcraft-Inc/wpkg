@@ -1690,7 +1690,7 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
         }
 
         std::string host(uri.path_scheme() + "://" + uri.get_domain());
-        if( !uri.get_port().empty() )
+        if(!uri.get_port().empty())
         {
             host += ":" + uri.get_port();
         }
