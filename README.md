@@ -37,3 +37,6 @@ This fork of WPKG adds features needed by the Xcraft toolchain.
 - Add a file that list all symlinks in control.tar
 - Support --exception option with sub-packages (control.info)
 - Add new option --keep-original-symlink-target
+- Continue backup with symbolic links on directories (must be improved)
+- Add new option --skip-hooks in order to be able to install without postinst run
+- Support for HTTPS via OpenSSL 3
