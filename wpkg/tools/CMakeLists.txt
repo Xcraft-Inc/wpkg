@@ -322,10 +322,6 @@ add_executable( ${PROJECT_NAME}
 
 StaticCompile()
 
-if( LINUX )
-    set( LINK_EXTRA "${LINK_EXTRA} -static" )
-endif()
-
 target_link_libraries( ${PROJECT_NAME}
     debpackages_static
     expr_static
