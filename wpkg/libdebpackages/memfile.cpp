@@ -1713,6 +1713,7 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
             const auto err = res.error();
 
             switch (err) {
+#ifdef USE_OPENSSL
             case httplib::Error::SSLConnection:
                 throw memfile_exception_io("SSL connection failed, SSL error: " + res.ssl_error());
 
@@ -1724,6 +1725,7 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
 
             case httplib::Error::SSLServerHostnameVerification:
                 throw memfile_exception_io("SSL hostname verification failed, X509 error: " + res.ssl_openssl_error());
+#endif /* USE_OPENSSL */
 
             default:
                 throw memfile_exception_io("HTTP error: " + httplib::to_string(err));
