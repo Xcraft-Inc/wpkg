@@ -1958,6 +1958,28 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
             }
         }
 
+        switch (res->status)
+        {
+        case 301: // Moved permanently
+        case 302: // Found
+        case 303: // See Other
+        case 307: // Temporary Redirect
+        case 308: // Permanent Redirect
+            break;
+
+        case 200: // OK
+            // valid response!
+            break;
+
+        case 401: // Unauthorized
+            // TBD:
+            // at times servers force you to reply to this one instead of
+            // directly accepting the Authorization: Basic ... field!?
+        default:
+            // TODO: we MUST test the field_name string before printing for security reasons
+            throw memfile_exception_io("HTTP response was " + res->reason + ", expected 200 or a redirect");
+        }
+
         if(info != NULL)
         {
             info->set_size(pos);
