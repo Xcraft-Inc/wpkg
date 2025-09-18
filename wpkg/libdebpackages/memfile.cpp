@@ -1928,6 +1928,7 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
         }
 
         int pos(0);
+        cli.set_follow_location(true);
         auto res = cli.Get(uri.path_only(), [&](const char *data, size_t data_length) {
             f_buffer.write(data, pos, data_length);
             pos += data_length;
@@ -1960,13 +1961,6 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
 
         switch (res->status)
         {
-        case 301: // Moved permanently
-        case 302: // Found
-        case 303: // See Other
-        case 307: // Temporary Redirect
-        case 308: // Permanent Redirect
-            break;
-
         case 200: // OK
             // valid response!
             break;
