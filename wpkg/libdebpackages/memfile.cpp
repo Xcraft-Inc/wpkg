@@ -48,10 +48,18 @@
 #include    "libdebpackages/case_insensitive_string.h"
 #include    "libdebpackages/wpkg_output.h"
 
+#if defined(_WIN32_WINNT) && defined(_WIN32_WINNT_WIN8) && _WIN32_WINNT < _WIN32_WINNT_WIN8
+#undef USE_HTTPLIB
+#else
+#define USE_HTTPLIB
+#endif
+
+#ifdef USE_HTTPLIB
 #ifdef USE_OPENSSL
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #endif /* USE_OPENSSL */
 #include    "libdebpackages/httplib.h"
+#endif /* USE_HTTPLIB */
 
 #ifdef debpackages_EXPORTS
 #define BZ_IMPORT 1
@@ -1672,6 +1680,224 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
             }
         }
     }
+#ifndef USE_HTTPLIB
+    else if(scheme == "http")
+    {
+         // make a copy of filename so we can handle redirects and not
+         // lose the original filename
+         wpkg_filename::uri_filename uri(filename);
+
+         // the only type of files we can gather from HTTP are regular files
+         if(info != NULL)
+         {
+             info->set_file_type(memory_file::file_info::regular_file);
+             info->set_mode(0644);
+         }
+         std::unique_ptr<tcp_client_server::tcp_client> http_client;
+         bool redirect;
+         std::string location;
+         int content_length(-1);
+         // TODO: add cache support
+         do
+         {
+             std::string name(uri.path_only());
+             redirect = false;
+             location.clear();
+             int port_number(80);
+             std::string port(uri.get_port());
+             if(!port.empty())
+             {
+                 port_number = file_info::str_to_int(port.c_str(), static_cast<int>(port.length()), 10);
+             }
+             if(info != NULL)
+             {
+                 info->set_filename(name);
+             }
+             std::string request("GET " + name + " HTTP/1.1\r\nHost: " + uri.get_domain() + "\r\n");
+             if(!filename.get_username().empty() && !filename.get_password().empty())
+             {
+                 std::string credentials(filename.get_username() + ":" + filename.get_password());
+                 request += ("Authorization: Basic " + to_base64(credentials.c_str(), credentials.length()) + "\r\n");
+             }
+             request += "\r\n"; // add an empty line
+             http_client.reset(new tcp_client_server::tcp_client(uri.get_domain(), port_number));
+             if(http_client->write(request.c_str(), request.length()) != static_cast<int>(request.length()))
+             {
+                 throw memfile_exception_io("error while writing HTTP request for \"" + filename.original_filename() + "\"");
+             }
+
+             // the reply is a header followed by the data, here we read the
+             // header because it is throw away data at this point
+             bool first_line(true);
+             for(;;)
+             {
+                 case_insensitive::case_insensitive_string field_name("");
+                 std::string field_value;
+                 bool got_name(false), trim(true);
+                 for(;;)
+                 {
+                     char c;
+                     if(http_client->read(&c, 1) != 1)
+                     {
+                         throw memfile_exception_io("error while reading HTTP response for \"" + filename.original_filename() + "\"");
+                     }
+                     if(c == '\r')
+                     {
+                         if(http_client->read(&c, 1) != 1)
+                         {
+                             throw memfile_exception_io("error while reading HTTP response for \"" + filename.original_filename() + "\"");
+                         }
+                         if(c != '\n')
+                         {
+                             throw memfile_exception_io("error while reading HTTP response for \"" + filename.original_filename() + "\": expected \\n");
+                         }
+                         break;
+                     }
+                     if(c == '\n')
+                     {
+                         // '\r' missing?!
+                         break;
+                     }
+                     if(got_name)
+                     {
+                         if(trim)
+                         {
+                             trim = isspace(c) != 0;
+                         }
+                         if(!trim)
+                         {
+                             field_value += c;
+                         }
+                     }
+                     else if(c == ':' && !first_line)
+                     {
+                         got_name = true;
+                     }
+                     else
+                     {
+                         field_name += c;
+                     }
+                 }
+                 if(field_name.empty())
+                 {
+                     break;
+                 }
+                 if(first_line)
+                 {
+                     first_line = false;
+                     // the first line must be HTTP/1.0 200 OK or HTTP/1.1 200 OK
+                     // although we want to support 301, 302, and 303 redirects
+                     std::string http_protocol(field_name.substr(0, 9));
+                     if(http_protocol != "HTTP/1.0 " && http_protocol != "HTTP/1.1 ")
+                     {
+                         throw memfile_exception_io("HTTP response: is not HTTP/1.0 or HTTP/1.1");
+                     }
+                     int http_response(file_info::str_to_int(field_name.c_str() + 9, 4, 10));
+                     switch(http_response)
+                     {
+                     case 301: // Moved permanently
+                     case 302: // Found
+                     case 303: // See Other
+                     case 307: // Temporary Redirect
+                     case 308: // Permanent Redirect
+                         // handle redirect
+                         redirect = true;
+                         break;
+
+                     case 200: // OK
+                         // valid response!
+                         break;
+
+                     case 401: // Unauthorized
+                         // TBD:
+                         // at times servers force you to reply to this one instead of
+                         // directly accepting the Authorization: Basic ... field!?
+                     default:
+                         // TODO: we MUST test the field_name string before printing for security reasons
+                         throw memfile_exception_io("HTTP response was " + field_name.substr(9, 3) + ", expected 200 or a redirect");
+                     }
+                 }
+                 else
+                 {
+                     if(field_name == "Location")
+                     {
+                         location = field_value;
+                     }
+                     else if(field_name == "Content-Length")
+                     {
+                         content_length = file_info::str_to_int(field_value.c_str(), static_cast<int>(field_value.length()), 10);
+                     }
+                     else if(info != NULL)
+                     {
+                         if(field_name == "Last-Modified")
+                         {
+                             struct tm time_info;
+                             if(strptime(field_value.c_str(), "%a, %d %b %Y %H:%M:%S %z", &time_info) != NULL)
+                             {
+                                 // unfortunately the tar format does not support time64_t
+                                 info->set_mtime(mktime(&time_info));
+                             }
+                             // else -- silent error?
+                         }
+                     }
+                     // other fields of interest?
+                 }
+             }
+             if(location.empty())
+             {
+                 if(redirect)
+                 {
+                     throw memfile_exception_io("received an HTTP redirect without a Location field");
+                 }
+             }
+             else
+             {
+                 if(!redirect)
+                 {
+                     throw memfile_exception_io("received an HTTP Location field without a redirect response");
+                 }
+                 uri.set_filename(location);
+                 std::string location_scheme(uri.path_scheme());
+                 if(location_scheme != "http" && location_scheme != "https")
+                 {
+                     throw memfile_exception_io("HTTP redirect has a location not using the HTTP or HTTPS scheme");
+                 }
+                 // note that we ignore the new user and password parameters since
+                 // we continue to use filename.get_username() and filename.get_password()
+                 // when generating the credentials
+             }
+         }
+         while(!location.empty());
+
+         // now read the file contents
+         // we do not trust the Content-Size (or even whether it is present)
+         // so we read until we get a read_size of zero
+         int pos(0);
+         for(; content_length == -1 || pos < content_length;)
+         {
+             //const int sz(content_length == -1 ? block_manager::BLOCK_MANAGER_BUFFER_SIZE : std::min(content_length - pos, block_manager::BLOCK_MANAGER_BUFFER_SIZE));
+             char buf[block_manager::BLOCK_MANAGER_BUFFER_SIZE];
+             const int read_size(http_client->read(buf, block_manager::BLOCK_MANAGER_BUFFER_SIZE));
+             if(read_size == -1)
+             {
+                 // reading of the entire file failed
+                 reset();
+                 throw memfile_exception_io("I/O error while reading HTTP file");
+             }
+             if(read_size == 0)
+             {
+                 // done!
+                 break;
+             }
+             f_buffer.write(buf, pos, read_size);
+             pos += read_size;
+         }
+         if(info != NULL)
+         {
+             info->set_size(pos);
+         }
+    }
+#else /* !USE_HTTPLIB */
 #ifdef USE_OPENSSL
     else if(scheme == "http" || scheme == "https")
 #else /* USE_OPENSSL */
@@ -1737,6 +1963,7 @@ void memory_file::read_file(const wpkg_filename::uri_filename& filename, file_in
             info->set_size(pos);
         }
     }
+#endif
     else
     {
         throw memfile_exception_parameter("scheme \"" + scheme + "\" (in \"" + filename.original_filename() + "\") not supported by libdebpackages at this point");
