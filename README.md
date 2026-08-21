@@ -14,7 +14,7 @@ This fork of WPKG adds features needed by the Xcraft toolchain.
 - Optimize speed for --show and --field commands
 - Add new option --accept-special-windows-filename
 - Add support for cross-compiling WPKG
-- Add support for AACRH64 and ARM32
+- Add support for AArch64 and ARM32
 - Fix bug with URI with spaces in sources.list
 - Just warn (instead of error) in case of unsupported .lnk files
 - Add support for Zstandard for the data payload of the packages
@@ -40,3 +40,4 @@ This fork of WPKG adds features needed by the Xcraft toolchain.
 - Continue backup with symbolic links on directories (must be improved)
 - Add new option --skip-hooks in order to be able to install without postinst run
 - Support for HTTPS via OpenSSL 3
+- Add support for RISC-V 64 and LoongArch 64 architectures
